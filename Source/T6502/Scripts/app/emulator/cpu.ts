@@ -172,8 +172,19 @@ module Emulator {
             this.started = new Date();
             this.lastCheck = this.started.getTime();
 
-            // slight pause before we get started
-            this.runner = this.timeoutService(() => this.execute.apply(this), 1, this.autoRefresh);                
+            this.runner = this.timeoutService(() => this.executeBatch.apply(this), 1, this.autoRefresh);                            
+        }
+
+        // this is the main execution loop that pauses every few sets to allow events, etc.
+        // to be processed. Adjust the number of instructions down if the app is not responsive
+        private executeBatch() {
+            var instructions: number = 0xff;
+            while (instructions--) {
+                this.execute();
+            }
+
+            // run again
+            this.runner = this.timeoutService(() => this.executeBatch.apply(this), 0, this.autoRefresh);            
         }
 
         // main loop - op codes update their own program counter so this just contiuously
@@ -201,10 +212,7 @@ module Emulator {
                 this.instructionsPerSecond = this.instructions;
                 this.instructions = 0;
                 this.lastCheck = now.getTime();
-            }
-            
-            // run again 
-            this.runner = this.timeoutService(() => this.execute.apply(this), 0, this.autoRefresh);
+            }                      
         }
 
         // push a value to the stack or throw an exception when full

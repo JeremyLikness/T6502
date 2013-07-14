@@ -88,6 +88,7 @@
     <Content Include="Scripts\app\emulator\compiler.js.map">
       <DependentUpon>compiler.ts</DependentUpon>
     </Content>
+    <None Include="Local.pubxml" />
     <None Include="Scripts\jquery-2.0.2.intellisense.js" />
     <TypeScriptCompile Include="Scripts\app\defs\jquery.d.ts" />
     <Content Include="Scripts\app\defs\jquery.d.js">
