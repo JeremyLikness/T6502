@@ -1,7 +1,3 @@
-///<reference path="../app.ts"/>
-///<reference path="../emulator/cpu.ts"/>
-///<reference path="../services/consoleService.ts"/>
-///<reference path="../services/cpuService.ts"/>
 var Main;
 (function (Main) {
     var MainController = (function () {
@@ -15,7 +11,7 @@ var Main;
             $scope.compilerInfo = "";
             $scope.setPc = function () {
                 var address = parseInt(_this.$scope.pc, 16);
-                if(address < 0 || address > Constants.Memory.Max) {
+                if(!angular.isNumber(address) || address === NaN || address < 0 || address) {
                     _this.$scope.pc = "Invalid address.";
                     return;
                 }
@@ -49,4 +45,3 @@ var Main;
     Main.MainController = MainController;    
     Main.App.Controllers.controller("MainCtrl", MainController);
 })(Main || (Main = {}));
-//@ sourceMappingURL=mainController.js.map
