@@ -34,7 +34,7 @@ module Main {
 
             $scope.setPc = () => {
                 var address: number = parseInt(this.$scope.pc, 16);
-                if (address < 0 || address > Constants.Memory.Max) {
+                if (!angular.isNumber(address) || address === NaN || address < 0 || address ) {
                     this.$scope.pc = "Invalid address.";
                     return;
                 }
