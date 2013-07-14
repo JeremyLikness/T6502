@@ -19,7 +19,7 @@ td
     background: lightgray;
     margin: 10px;
     padding: 5px;
-    width: 50px;
+    min-width: 50px;
     text-align: right;
     font-family: consolas, courier, sans-serif
 }

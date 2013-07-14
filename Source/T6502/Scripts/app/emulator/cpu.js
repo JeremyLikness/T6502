@@ -116,11 +116,20 @@ var Emulator;
             this.started = new Date();
             this.lastCheck = this.started.getTime();
             this.runner = this.timeoutService(function () {
-                return _this.execute.apply(_this);
+                return _this.executeBatch.apply(_this);
             }, 1, this.autoRefresh);
         };
-        Cpu.prototype.execute = function () {
+        Cpu.prototype.executeBatch = function () {
             var _this = this;
+            var instructions = 0xff;
+            while(instructions--) {
+                this.execute();
+            }
+            this.runner = this.timeoutService(function () {
+                return _this.executeBatch.apply(_this);
+            }, 0, this.autoRefresh);
+        };
+        Cpu.prototype.execute = function () {
             if(!this.runningState || this.errorState) {
                 return;
             }
@@ -138,9 +147,6 @@ var Emulator;
                 this.instructions = 0;
                 this.lastCheck = now.getTime();
             }
-            this.runner = this.timeoutService(function () {
-                return _this.execute.apply(_this);
-            }, 0, this.autoRefresh);
         };
         Cpu.prototype.stackPush = function (value) {
             if(this.rSP >= 0x0) {
