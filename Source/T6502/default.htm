@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>TypeScript 6502 Emulator</title>
+    <link rel="stylesheet" href="app.css" type="text/css" />
+    <script type="text/javascript" src="Scripts/jquery-2.0.2.js"></script>
+    <script type="text/javascript" src="Scripts/angular.js"></script>
+    <script type="text/javascript" src="Scripts/app/app.js"></script>
+    <script type="text/javascript" src="Scripts/app/globalConstants.js"></script>
+    <script type="text/javascript" src="Scripts/app/filters/hexadecimal.js"></script>
+    <script type="text/javascript" src="Scripts/app/filters/eightbits.js"></script>
+    <script type="text/javascript" src="Scripts/app/directives/console.js"></script>
+    <script type="text/javascript" src="Scripts/app/directives/display.js"></script>
+    <script type="text/javascript" src="Scripts/app/services/consoleService.js"></script>
+    <script type="text/javascript" src="Scripts/app/services/displayService.js"></script>
+    <script type="text/javascript" src="Scripts/app/services/cpuService.js"></script>
+    <script type="text/javascript" src="Scripts/app/controllers/mainController.js"></script>
+    <script type="text/javascript" src="Scripts/app/emulator/opCodes.js"></script>
+    <script type="text/javascript" src="Scripts/app/emulator/compiler.js"></script>
+    <script type="text/javascript" src="Scripts/app/emulator/cpu.js"></script>
+</head>
+<body data-ng-cloak="" data-ng-app="app">
+    <div id="content" data-ng-controller="MainCtrl">
+        <h1>{{title}}</h1>
+        <div class="column">
+            <button data-ng-click="cpu.reset()">Reset</button>&nbsp;
+            <button data-ng-click="cpu.halt()" data-ng-enabled="cpu.runningState" data-ng-disabled="cpu.errorState || !cpu.runningState">Halt</button>
+            <button data-ng-click="cpu.stop()" data-ng-enabled="cpu.runningState" data-ng-disabled="cpu.errorState || !cpu.runningState">Pause</button>        
+            <button data-ng-click="cpu.run()" data-ng-enabled="!cpu.runningState && !cpu.errorState" data-ng-disabled="cpu.runningState || cpu.errorState">Run</button>
+            <input type="checkbox" data-ng-model="cpu.autoRefresh"/>Refresh
+            <table>
+                <tr><th>PC</th><th>SP</th><th>A</th><th>X</th><th>Y</th><td>NV-BDIZC</td><th>Runtime</th><th>IPS</th></tr>
+                <tr>
+                    <td>{{cpu.rPC | hexadecimal}}</td>
+                    <td>{{cpu.rSP | hexadecimal}}</td>
+                    <td>{{cpu.rA | hexadecimal}}</td>
+                    <td>{{cpu.rX | hexadecimal}}</td>
+                    <td>{{cpu.rY | hexadecimal}}</td> 
+                    <td>{{cpu.rP | eightbits}}</td> 
+                    <td>{{cpu.elapsedMilliseconds / 1000 | number:3}}</td>               
+                    <td>{{cpu.instructionsPerSecond}}</td>               
+                </tr>
+            </table>
+            <console/>
+        </div>
+        <div class="column">
+            <div style="width: 200px;">&nbsp;</div>
+            <display/>
+        </div>
+        <div class="column">
+            <div>
+                <span>PC: $</span><input type="text" placeholder="{{cpu.rPC | hexadecimal}}" data-ng-model="pc" />
+                <button data-ng-click="setPc()" data-ng-enabled="!cpu.runningState" data-ng-disabled="cpu.runningState">Set</button>
+                <button data-ng-click="compile()" data-ng-enabled="!cpu.runningState" data-ng-disabled="cpu.runningState">Compile</button>
+                <button data-ng-click="decompile()">Disassemble</button>
+            </div>
+            <textarea data-ng-model="compilerInfo"></textarea>
+        </div>
+    </div>
+</body>
+</html>
