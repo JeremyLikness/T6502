@@ -7,9 +7,10 @@ module Constants {
         public static NibbleMask: number = 0x0F; 
         public static Stack: number = 0x0100;
         public static BitsInByte: number = 8;
-        public static DefaultStart: number = 0xC000;
+        public static DefaultStart: number = 0x0200;
         public static BranchBack: number = 0x7F; 
         public static BranchOffset: number = 0x100;
+        public static MaxInstructionsDecompile: number = 50;
     }
 
     export class Display {

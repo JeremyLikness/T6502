@@ -3,13 +3,13 @@
 var Directives;
 (function (Directives) {
     var Console = (function () {
-        function Console() { }
-        Console.Factory = function Factory(consoleService) {
+        function Console() {
+        }
+        Console.Factory = function (consoleService) {
             return {
                 restrict: "E",
                 template: "<div class='console'><span ng-repeat='line in lines'>{{line}}<br/></span></div>",
-                scope: {
-                },
+                scope: {},
                 link: function (scope, element, attrs) {
                     var element = angular.element(element);
                     scope.lines = consoleService.lines;
@@ -22,10 +22,8 @@ var Directives;
         };
         return Console;
     })();
-    Directives.Console = Console;    
-    Main.App.Directives.directive("console", [
-        "consoleService", 
-        Console.Factory
-    ]);
+    Directives.Console = Console;
+
+    Main.App.Directives.directive("console", ["consoleService", Console.Factory]);
 })(Directives || (Directives = {}));
 //@ sourceMappingURL=console.js.map

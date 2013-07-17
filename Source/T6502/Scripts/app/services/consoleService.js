@@ -9,6 +9,7 @@ var Services;
         };
         return ConsoleService;
     })();
-    Services.ConsoleService = ConsoleService;    
+    Services.ConsoleService = ConsoleService;
+
     Main.App.Services.service("consoleService", ConsoleService);
 })(Services || (Services = {}));

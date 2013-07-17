@@ -29,7 +29,7 @@ module Main {
             this.cpuService = cpuService;        
             $scope.title = "TypeScript 6502 Emulator.";
             $scope.cpu = cpuService.getCpu();
-            $scope.pc = "C000";
+            $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
 
             $scope.setPc = () => {
