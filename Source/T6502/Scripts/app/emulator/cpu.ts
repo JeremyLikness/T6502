@@ -35,7 +35,7 @@ module Emulator {
         peek(address: number): number;
         setFlags(value: number): void;
         compareWithFlags(registerValue: number, value: number): void;
-        getOperation(value: number): IDecompileInfo;        
+        getOperation(value: number): IOperation;        
     }
 
     export class Cpu implements ICpu {
@@ -137,7 +137,7 @@ module Emulator {
                 0xFE, 0x00, 0xFE, // INC $FE00, X 
                 0xFE, 0x00, 0xFF, // INC $FF00, X 
                 0xE8,             // INX   
-                0x4C, 0x1A, 0xC0  // JMP CYCLE 
+                0x4C, 0x1A, 0x02  // JMP CYCLE 
             ];
             for (idx = 0; idx < program.length; idx++) {
                 this.poke(Constants.Memory.DefaultStart + idx, program[idx]);
@@ -249,7 +249,7 @@ module Emulator {
 
         // pop the address and increment the PC 
         addrPop(): number {
-            var value = this.memory[this.rPC];
+            var value: number = this.peek(this.rPC);
             this.rPC += 1;
             return value;
         }
@@ -270,6 +270,11 @@ module Emulator {
         }
 
         peek(address: number): number {
+            // special addresse 
+            if (address === 0xFD) {
+                return Math.floor(Math.random() * 0x100); 
+            }
+
             return this.memory[address];
         }
 
@@ -302,9 +307,8 @@ module Emulator {
             this.setFlags(registerValue - value);
         }
 
-        getOperation(value: number): IDecompileInfo {
-            var operation: any = <any>this.operationMap[value & Constants.Memory.ByteMask];                
-            return <IDecompileInfo>operation;
+        getOperation(value: number): IOperation {
+            return this.operationMap[value & Constants.Memory.ByteMask];                            
         }
     }
 }

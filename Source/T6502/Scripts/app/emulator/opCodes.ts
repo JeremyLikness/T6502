@@ -4,9 +4,12 @@
 module Emulator {
 
     export interface IOperation {
-        execute(cpu: Emulator.ICpu);
+        execute(cpu: ICpu);
         addressingMode: number;
         opCode: number;
+        opName: string;
+        sizeBytes: number; 
+        decompile(address: number, bytes: number[]): string;
     }
 
     var registeredOperations: { new(): IOperation; }[] = [];
@@ -26,13 +29,25 @@ module Emulator {
         public static ModeSingle: number = 11; 
         public static ModeRelative: number = 12;
 
-        private static computeBranch(address: number, offset: number): number {
+        public static computeBranch(address: number, offset: number): number {
             var result: number = 0;
             if (offset > Constants.Memory.BranchBack) {
                 result = (address - (Constants.Memory.BranchOffset - offset));
             }
             else {
                 result = address + offset;
+            }
+            return result;
+        }
+
+        public static LoadOpCodesByName(opCode: string): IOperation[] {
+            var result: IOperation[] = [];
+            var idx: number;
+            for(var idx = 0; idx < registeredOperations.length; idx++) {
+                var operation: IOperation = new registeredOperations[idx]();
+                if (operation.opName === opCode) {
+                    result.push(operation);
+                }
             }
             return result;
         }
@@ -72,7 +87,7 @@ module Emulator {
         }
     }
 
-    export class BranchNotEqual implements IOperation, IDecompileInfo {
+    export class BranchNotEqual implements IOperation {
         
         public opName: string = "BNE";
         public sizeBytes: number = 0x02; 
@@ -95,7 +110,7 @@ module Emulator {
     
     registeredOperations.push(BranchNotEqual);
 
-    export class CompareXImmediate implements IOperation, IDecompileInfo {
+    export class CompareXImmediate implements IOperation {
 
         public opName: string = "CPX";
         public sizeBytes: number = 0x02; 
@@ -115,7 +130,7 @@ module Emulator {
 
     registeredOperations.push(CompareXImmediate);
 
-    export class ExclusiveOrIndirectX implements IOperation, IDecompileInfo {
+    export class ExclusiveOrIndirectX implements IOperation {
         
         public opName: string = "EOR";
         public sizeBytes: number = 0x02; 
@@ -138,7 +153,7 @@ module Emulator {
 
     registeredOperations.push(ExclusiveOrIndirectX);
 
-    export class InvalidOp implements IOperation, IDecompileInfo {
+    export class InvalidOp implements IOperation {
         
         public opName: string = "???";
         public sizeBytes: number = 0x01;
@@ -164,7 +179,7 @@ module Emulator {
         }
     }
 
-    export class IncAbsolute implements IOperation, IDecompileInfo {
+    export class IncAbsolute implements IOperation {
         
         public opName: string = "INC";
         public sizeBytes: number = 0x03; 
@@ -188,7 +203,7 @@ module Emulator {
 
     registeredOperations.push(IncAbsolute);
 
-    export class IncAbsoluteX implements IOperation, IDecompileInfo {
+    export class IncAbsoluteX implements IOperation {
         
         public opName: string = "INC";
         public sizeBytes: number = 0x03; 
@@ -212,7 +227,7 @@ module Emulator {
 
     registeredOperations.push(IncAbsoluteX);
 
-    export class IncZeroPage implements IOperation, IDecompileInfo {
+    export class IncZeroPage implements IOperation {
         
         public opName: string = "INC";
         public sizeBytes: number = 0x02; 
@@ -236,7 +251,7 @@ module Emulator {
 
     registeredOperations.push(IncZeroPage);
 
-    export class IncrementX implements IOperation, IDecompileInfo {
+    export class IncrementX implements IOperation {
         
         public opName: string = "INX";
         public sizeBytes: number = 0x01; 
@@ -258,7 +273,7 @@ module Emulator {
     registeredOperations.push(IncrementX);
 
 
-    export class JmpAbsolute implements IOperation, IDecompileInfo {
+    export class JmpAbsolute implements IOperation {
         
         public opName:string = "JMP";
         public sizeBytes: number = 0x03; 
@@ -279,7 +294,7 @@ module Emulator {
 
     registeredOperations.push(JmpAbsolute);
 
-    export class LoadAccumulatorImmediate implements IOperation, IDecompileInfo {
+    export class LoadAccumulatorImmediate implements IOperation {
         
         public opName: string = "LDA";
         public sizeBytes: number = 0x02; 
@@ -300,7 +315,7 @@ module Emulator {
 
     registeredOperations.push(LoadAccumulatorImmediate);
 
-    export class LoadYRegisterImmediate implements IOperation, IDecompileInfo {
+    export class LoadYRegisterImmediate implements IOperation {
         
         public opName: string = "LDY";
         public sizeBytes: number = 0x02; 
@@ -322,7 +337,7 @@ module Emulator {
 
     registeredOperations.push(LoadYRegisterImmediate);
 
-    export class LoadXRegisterImmediate implements IOperation, IDecompileInfo {
+    export class LoadXRegisterImmediate implements IOperation {
 
         public opName: string = "LDX";
         public sizeBytes: number = 0x02; 
@@ -343,7 +358,7 @@ module Emulator {
 
     registeredOperations.push(LoadXRegisterImmediate);
 
-    export class LoadXRegisterZeroPage implements IOperation, IDecompileInfo {
+    export class LoadXRegisterZeroPage implements IOperation {
 
         public opName: string = "LDX";
         public sizeBytes: number = 0x02; 
@@ -365,7 +380,7 @@ module Emulator {
 
     registeredOperations.push(LoadXRegisterZeroPage);
 
-    export class RtsSingle implements IOperation, IDecompileInfo {
+    export class RtsSingle implements IOperation {
 
         public opName: string = "RTS";
         public sizeBytes: number = 0x01; 
@@ -385,7 +400,7 @@ module Emulator {
 
     registeredOperations.push(RtsSingle);
 
-    export class StoreAccumulatorAbsolute implements IOperation, IDecompileInfo {
+    export class StoreAccumulatorAbsolute implements IOperation {
 
         public opName: string = "STA";
         public sizeBytes: number = 0x03; 
@@ -406,7 +421,7 @@ module Emulator {
 
     registeredOperations.push(StoreAccumulatorAbsolute);
 
-    export class StoreAccumulatorIndirectY implements IOperation, IDecompileInfo {
+    export class StoreAccumulatorIndirectY implements IOperation {
 
         public opName: string = "STA";
         public sizeBytes: number = 0x02; 
@@ -429,7 +444,7 @@ module Emulator {
 
     registeredOperations.push(StoreAccumulatorIndirectY);
     
-    export class StoreAccumulatorZeroPage implements IOperation, IDecompileInfo {
+    export class StoreAccumulatorZeroPage implements IOperation {
 
         public opName: string = "STA";
         public sizeBytes: number = 0x02; 
@@ -449,5 +464,4 @@ module Emulator {
     }
 
     registeredOperations.push(StoreAccumulatorZeroPage);
-
 }
