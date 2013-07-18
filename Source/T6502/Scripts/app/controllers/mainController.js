@@ -15,22 +15,12 @@ var Main;
             $scope.compilerInfo = "";
 
             $scope.setPc = function () {
-                var address = parseInt(_this.$scope.pc, 16);
-                if (!angular.isNumber(address) || address === NaN || address < 0 || address) {
-                    _this.$scope.pc = "Invalid address.";
-                    return;
-                }
-                _this.$scope.cpu.rPC = address;
+                _this.$scope.cpu.rPC = parseInt(_this.$scope.pc, 16);
             };
 
             $scope.decompile = function () {
                 try  {
-                    var address = parseInt(_this.$scope.pc, 16);
-                    if (address < 0 || address > Constants.Memory.Max) {
-                        _this.$scope.compilerInfo = "Invalid address.";
-                        return;
-                    }
-                    _this.$scope.compilerInfo = _this.cpuService.getCompiler().decompile(address);
+                    _this.$scope.compilerInfo = _this.cpuService.getCompiler().decompile(parseInt(_this.$scope.pc, 16));
                 } catch (e) {
                     _this.$scope.compilerInfo = e;
                 }

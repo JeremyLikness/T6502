@@ -23,6 +23,13 @@
     <Content Include="Scripts\app\controllers\mainController.js.map">
       <DependentUpon>mainController.ts</DependentUpon>
     </Content>
+    <Content Include="web.config" />
+    <None Include="web.Debug.config">
+      <DependentUpon>web.config</DependentUpon>
+    </None>
+    <None Include="web.Release.config">
+      <DependentUpon>web.config</DependentUpon>
+    </None>
     <TypeScriptCompile Include="Scripts\app\directives\console.ts" />
     <Content Include="Scripts\app\directives\console.js">
       <DependentUpon>console.ts</DependentUpon>
@@ -39,6 +46,13 @@
     </Content>
     <TypeScriptCompile Include="Scripts\app\emulator\compiler.ts" />
     <TypeScriptCompile Include="Scripts\app\emulator\ascii.ts" />
+    <TypeScriptCompile Include="Scripts\app\directives\hexadecimal.ts" />
+    <Content Include="Scripts\app\directives\hexadecimal.js">
+      <DependentUpon>hexadecimal.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\app\directives\hexadecimal.min.js">
+      <DependentUpon>hexadecimal.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\app\emulator\ascii.js">
       <DependentUpon>ascii.ts</DependentUpon>
     </Content>
@@ -98,6 +112,9 @@
     <None Include="Local.pubxml" />
     <Content Include="Scripts\app\emulator\ascii.js.map">
       <DependentUpon>ascii.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\app\directives\hexadecimal.js.map">
+      <DependentUpon>hexadecimal.ts</DependentUpon>
     </Content>
     <None Include="Scripts\jquery-2.0.2.intellisense.js" />
     <TypeScriptCompile Include="Scripts\app\defs\jquery.d.ts" />

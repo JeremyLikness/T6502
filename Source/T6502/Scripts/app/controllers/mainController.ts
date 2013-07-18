@@ -33,22 +33,13 @@ module Main {
             $scope.compilerInfo = "";
 
             $scope.setPc = () => {
-                var address: number = parseInt(this.$scope.pc, 16);
-                if (!angular.isNumber(address) || address === NaN || address < 0 || address ) {
-                    this.$scope.pc = "Invalid address.";
-                    return;
-                }
-                this.$scope.cpu.rPC = address;
+                this.$scope.cpu.rPC = parseInt(this.$scope.pc, 16);
             }
 
             $scope.decompile = () => {
                 try {
-                    var address = parseInt(this.$scope.pc, 16);
-                    if (address < 0 || address > Constants.Memory.Max) {
-                        this.$scope.compilerInfo = "Invalid address.";
-                        return;
-                    }
-                    this.$scope.compilerInfo = this.cpuService.getCompiler().decompile(address); 
+                    this.$scope.compilerInfo = this.cpuService.getCompiler().decompile(
+                        parseInt(this.$scope.pc, 16)); 
                 }
                 catch (e) {
                     this.$scope.compilerInfo = e;
