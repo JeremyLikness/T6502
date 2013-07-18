@@ -12,6 +12,7 @@
     <script type="text/javascript" src="Scripts/app/filters/eightbits.js"></script>
     <script type="text/javascript" src="Scripts/app/directives/console.js"></script>
     <script type="text/javascript" src="Scripts/app/directives/display.js"></script>
+    <script type="text/javascript" src="Scripts/app/directives/hexadecimal.js"></script>
     <script type="text/javascript" src="Scripts/app/services/consoleService.js"></script>
     <script type="text/javascript" src="Scripts/app/services/displayService.js"></script>
     <script type="text/javascript" src="Scripts/app/services/cpuService.js"></script>
@@ -49,13 +50,18 @@
             <display/>
         </div>
         <div class="column">
-            <div>
-                <span>PC: $</span><input type="text" placeholder="{{cpu.rPC | hexadecimal}}" data-ng-model="pc" />
-                <button data-ng-click="setPc()" data-ng-enabled="!cpu.runningState" data-ng-disabled="cpu.runningState">Set</button>
-                <button data-ng-click="compile()" data-ng-enabled="!cpu.runningState" data-ng-disabled="cpu.runningState">Compile</button>
-                <button data-ng-click="decompile()">Disassemble</button>
-            </div>
-            <textarea data-ng-model="compilerInfo"></textarea>
+            <form name="compileForm">                
+                <div>
+                    <span>PC: $</span><input id="programStart" name="programStart" type="text" placeholder="{{cpu.rPC | hexadecimal}}" data-ng-model="pc" hexadecimal/>
+                    <button data-ng-submit="" data-ng-click="setPc()" data-ng-disabled="compileForm.programStart.$invalid || cpu.runningState" data-ng-enabled="!cpu.runningState">Set</button>
+                    <button data-ng-click="compile()" data-ng-enabled="!cpu.runningState" data-ng-disabled="cpu.runningState">Compile</button>
+                    <button data-ng-click="decompile()" data-ng-disabled="compileForm.programStart.$invalid">Disassemble</button>
+                </div>
+                <div>
+                    <span style="color: red;" data-ng-show="compileForm.programStart.$error.hexadecimal">Enter a valid hexadecimal address between 0 and FFFF.&nbsp;</span>                    
+                </div>
+                <textarea data-ng-model="compilerInfo"></textarea>
+            </form>
         </div>
     </div>
 </body>
