@@ -1,6 +1,3 @@
-///<reference path="../app.ts"/>
-///<reference path="../services/consoleService.ts"/>
-///<reference path="../services/displayService.ts"/>
 var Directives;
 (function (Directives) {
     var Display = (function () {
@@ -87,8 +84,6 @@ var Directives;
 
                     consoleService.log("Built pixel map.");
 
-                    // this directive is tightly coupled to the service so the service literally
-                    // takes one callback so it can update the display when the memory is poked
                     displayService.callback = function (address, value) {
                         var safeAddress = address & Constants.Display.Max;
                         var safeValue = value & Constants.Memory.ByteMask;
@@ -107,4 +102,3 @@ var Directives;
 
     Main.App.Directives.directive("display", ["consoleService", "displayService", Display.Factory]);
 })(Directives || (Directives = {}));
-//@ sourceMappingURL=display.js.map

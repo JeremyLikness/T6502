@@ -1,4 +1,3 @@
-///<reference path="../app.ts"/>
 var Directives;
 (function (Directives) {
     var Hexadecimal = (function () {
@@ -24,4 +23,3 @@ var Directives;
 
     Main.App.Directives.directive("hexadecimal", [Hexadecimal.Factory]);
 })(Directives || (Directives = {}));
-//@ sourceMappingURL=hexadecimal.js.map

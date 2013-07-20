@@ -1,5 +1,3 @@
-///<reference path="cpu.ts"/>
-///<reference path="compiler.ts"/>
 var Emulator;
 (function (Emulator) {
     var registeredOperations = [];
@@ -446,4 +444,3 @@ var Emulator;
 
     registeredOperations.push(StoreAccumulatorZeroPage);
 })(Emulator || (Emulator = {}));
-//@ sourceMappingURL=opCodes.js.map

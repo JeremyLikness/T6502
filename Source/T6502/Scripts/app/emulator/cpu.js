@@ -1,7 +1,3 @@
-///<reference path="../app.ts"/>
-///<reference path="../services/consoleService.ts"/>
-///<reference path="../services/displayService.ts"/>
-///<reference path="opCodes.ts"/>
 var Emulator;
 (function (Emulator) {
     var Cpu = (function () {
@@ -57,7 +53,6 @@ var Emulator;
                 this.memory[idx] = 0x00;
             }
 
-            // hack for a miniature program to display the palette
             var program = [
                 0xa9,
                 0xe1,
@@ -118,7 +113,6 @@ var Emulator;
             this.consoleService.log("CPU has been successfully reset.");
         };
 
-        // kicks of the execution of code
         Cpu.prototype.run = function () {
             var _this = this;
             if (this.runningState) {
@@ -140,8 +134,6 @@ var Emulator;
             }, 1, this.autoRefresh);
         };
 
-        // this is the main execution loop that pauses every few sets to allow events, etc.
-        // to be processed. Adjust the number of instructions down if the app is not responsive
         Cpu.prototype.executeBatch = function () {
             var _this = this;
             var instructions = 0xff;
@@ -149,14 +141,11 @@ var Emulator;
                 this.execute();
             }
 
-            // run again
             this.runner = this.timeoutService(function () {
                 return _this.executeBatch.apply(_this);
             }, 0, this.autoRefresh);
         };
 
-        // main loop - op codes update their own program counter so this just contiuously
-        // grabs an instruction, runs it, and grabs the next
         Cpu.prototype.execute = function () {
             if (!this.runningState || this.errorState) {
                 return;
@@ -169,7 +158,6 @@ var Emulator;
                 this.halt();
             }
 
-            // track instructions per second
             this.instructions += 1;
 
             var now = new Date();
@@ -182,7 +170,6 @@ var Emulator;
             }
         };
 
-        // push a value to the stack or throw an exception when full
         Cpu.prototype.stackPush = function (value) {
             if (this.rSP >= 0x0) {
                 this.rSP -= 1;
@@ -194,7 +181,6 @@ var Emulator;
             }
         };
 
-        // pop a value from the stack or throw an exception when empty
         Cpu.prototype.stackPop = function () {
             if (this.rSP < Constants.Memory.Stack) {
                 var value = this.memory[this.rSP + Constants.Memory.Stack];
@@ -206,26 +192,21 @@ var Emulator;
             }
         };
 
-        // execute a "return from subroutine" by popping the return value from the stack
         Cpu.prototype.stackRts = function () {
             this.rPC = this.stackPop() + 0x01 + (this.stackPop() << Constants.Memory.BitsInByte);
         };
 
-        // pop the address and increment the PC
         Cpu.prototype.addrPop = function () {
             var value = this.peek(this.rPC);
             this.rPC += 1;
             return value;
         };
 
-        // grab a word, low byte first
         Cpu.prototype.addrPopWord = function () {
             var word = this.addrPop() + (this.addrPop() << Constants.Memory.BitsInByte);
             return word;
         };
 
-        // set a value. Will recognize when a value is set in display memory and
-        // use the display service to update that
         Cpu.prototype.poke = function (address, value) {
             this.memory[address] = value;
             if (address >= 0xF000 && address <= 0xFFFF) {
@@ -274,4 +255,3 @@ var Emulator;
     })();
     Emulator.Cpu = Cpu;
 })(Emulator || (Emulator = {}));
-//@ sourceMappingURL=cpu.js.map

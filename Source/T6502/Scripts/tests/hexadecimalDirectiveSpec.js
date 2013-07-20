@@ -1,9 +1,3 @@
-/// <reference path='jasmine.d.ts'/>
-/// <reference path='../app/defs/angular.d.ts'/>
-/// <reference path='angular-mocks.d.ts'/>
-/// <reference path='../app/defs/jquery.d.ts'/>
-/// <reference path='../app/app.ts'/>
-/// <reference path='../app/directives/hexadecimal.ts'/>
 var Tests;
 (function (Tests) {
     describe("hexadecimal directive", function () {
@@ -31,7 +25,7 @@ var Tests;
         describe("given invalid input when called", function () {
             it("then should reject the input by setting the hexadecimal validation to false and returning undefined", function () {
                 form.hexValue.$setViewValue("zoo");
-                expect($scope.hexModelValue).toBeUndefined();
+                expect($scope.hexModelValue).toBe(undefined);
                 expect(form.hexValue.$valid).toBe(false);
             });
         });
@@ -45,4 +39,3 @@ var Tests;
         });
     });
 })(Tests || (Tests = {}));
-//@ sourceMappingURL=hexadecimalDirectiveSpec.js.map

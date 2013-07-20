@@ -1,4 +1,3 @@
-///<reference path="../app.ts"/>
 var Filters;
 (function (Filters) {
     var EightBitsFilter = (function () {
@@ -22,4 +21,3 @@ var Filters;
 
     Main.App.Filters.filter("eightbits", [EightBitsFilter.Factory]);
 })(Filters || (Filters = {}));
-//@ sourceMappingURL=eightbits.js.map

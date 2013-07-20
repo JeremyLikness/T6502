@@ -43,7 +43,7 @@ module Tests {
         describe("given invalid input when called", () => {
             it("then should reject the input by setting the hexadecimal validation to false and returning undefined", () => {        
                 form.hexValue.$setViewValue("zoo");
-                expect($scope.hexModelValue).toBeUndefined();
+                expect($scope.hexModelValue).toBe(undefined);
                 expect(form.hexValue.$valid).toBe(false);                
             });
         });
