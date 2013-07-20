@@ -34,11 +34,14 @@ module Emulator {
         poke(address: number, value: number): void;
         peek(address: number): number;
         setFlags(value: number): void;
-        compareWithFlags(registerValue: number, value: number): void;
+        compareWithFlags(registerValue: number, value: number): void;    
+    }
+
+    export interface ICpuExtended extends ICpu {
         getOperation(value: number): IOperation;        
     }
 
-    export class Cpu implements ICpu {
+    export class Cpu implements ICpuExtended {
             
         public rA: number;
         public rX: number;

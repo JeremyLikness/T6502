@@ -1,3 +1,5 @@
+///<reference path="../globalConstants.ts"/>
+///<reference path="../app.ts"/>
 var Services;
 (function (Services) {
     var DisplayService = (function () {
@@ -19,3 +21,4 @@ var Services;
 
     Main.App.Services.service("displayService", DisplayService);
 })(Services || (Services = {}));
+//@ sourceMappingURL=displayService.js.map

@@ -20,13 +20,13 @@ module Emulator {
 
     export class Compiler implements ICompiler {
     
-        private cpu: Emulator.ICpu;
+        private cpu: Emulator.ICpuExtended;
         private consoleService: Services.ConsoleService;
         private opCodeCache: { [opCodeName: string] : IOperation[] };
         private opCode: RegExp = /^\s+([A-Za-z]{3})\s*(\S*)/;            
 
         constructor(
-            cpu: Emulator.ICpu, 
+            cpu: Emulator.ICpuExtended, 
             consoleService: Services.ConsoleService) {
             this.cpu = cpu;
             this.consoleService = consoleService;

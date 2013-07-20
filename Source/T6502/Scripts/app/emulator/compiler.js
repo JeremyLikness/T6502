@@ -1,3 +1,5 @@
+///<reference path='cpu.ts'/>
+///<reference path='opCodes.ts'/>
 var Emulator;
 (function (Emulator) {
     var Compiler = (function () {
@@ -80,6 +82,7 @@ var Emulator;
                     continue;
                 }
 
+                // trim the line
                 input = input.replace(whitespaceTrim, "").replace(whitespaceTrimEnd, "");
 
                 if (input.match(memoryLabel)) {
@@ -87,6 +90,7 @@ var Emulator;
 
                     label = memoryLabel.exec(input)[1];
 
+                    // strip the label out
                     input = input.replace(label + ":", "");
 
                     if (!addressSet) {
@@ -172,3 +176,4 @@ var Emulator;
     })();
     Emulator.Compiler = Compiler;
 })(Emulator || (Emulator = {}));
+//@ sourceMappingURL=compiler.js.map

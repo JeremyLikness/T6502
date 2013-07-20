@@ -20,10 +20,81 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Content\jasmine\jasmine.css" />
+    <Content Include="Content\jasmine\jasmine_favicon.png" />
     <Content Include="Scripts\app\controllers\mainController.js.map">
       <DependentUpon>mainController.ts</DependentUpon>
     </Content>
+    <Content Include="Scripts\jasmine-samples\Player.js" />
+    <Content Include="Scripts\jasmine-samples\PlayerSpec.js" />
+    <Content Include="Scripts\jasmine-samples\Song.js" />
+    <Content Include="Scripts\jasmine-samples\SpecHelper.js" />
+    <Content Include="Scripts\jasmine\jasmine-html.js" />
+    <Content Include="Scripts\jasmine\jasmine.js" />
+    <TypeScriptCompile Include="Scripts\tests\jasmine.d.ts" />
+    <TypeScriptCompile Include="Scripts\tests\angular-mocks.d.ts" />
+    <Content Include="Scripts\tests\angular-mocks.d.js">
+      <DependentUpon>angular-mocks.d.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\consoleServiceSpec.ts" />
+    <Content Include="Scripts\tests\consoleServiceSpec.js">
+      <DependentUpon>consoleServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\consoleServiceSpec.min.js">
+      <DependentUpon>consoleServiceSpec.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\displayServiceSpec.ts" />
+    <Content Include="Scripts\tests\displayServiceSpec.js">
+      <DependentUpon>displayServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\displayServiceSpec.min.js">
+      <DependentUpon>displayServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\eightbitsFilterSpec.js">
+      <DependentUpon>eightbitsFilterSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\eightbitsFilterSpec.min.js">
+      <DependentUpon>eightbitsFilterSpec.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\hexadecimalFilterSpec.ts" />
+    <TypeScriptCompile Include="Scripts\tests\hexadecimalDirectiveSpec.ts" />
+    <Content Include="Scripts\tests\hexadecimalDirectiveSpec.js">
+      <DependentUpon>hexadecimalDirectiveSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\hexadecimalDirectiveSpec.min.js">
+      <DependentUpon>hexadecimalDirectiveSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\hexadecimalFilterSpec.js">
+      <DependentUpon>hexadecimalFilterSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\hexadecimalFilterSpec.min.js">
+      <DependentUpon>hexadecimalFilterSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\jasmine.d.js">
+      <DependentUpon>jasmine.d.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\eightbitsFilterSpec.ts" />
+    <Content Include="Scripts\tests\mainControllerSpec.js">
+      <DependentUpon>eightbitsFilterSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="tests.htm" />
     <Content Include="web.config" />
+    <Content Include="Scripts\jasmine\MIT.LICENSE" />
+    <Content Include="Scripts\tests\eightbitsFilterSpec.js.map">
+      <DependentUpon>eightbitsFilterSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\hexadecimalFilterSpec.js.map">
+      <DependentUpon>hexadecimalFilterSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\hexadecimalDirectiveSpec.js.map">
+      <DependentUpon>hexadecimalDirectiveSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\consoleServiceSpec.js.map">
+      <DependentUpon>consoleServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\displayServiceSpec.js.map">
+      <DependentUpon>displayServiceSpec.ts</DependentUpon>
+    </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
@@ -505,7 +576,6 @@
   <ItemGroup>
     <Content Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
