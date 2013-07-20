@@ -1,5 +1,3 @@
-///<reference path="../app.ts"/>
-///<reference path="../services/consoleService.ts"/>
 var Directives;
 (function (Directives) {
     var Console = (function () {
@@ -26,4 +24,3 @@ var Directives;
 
     Main.App.Directives.directive("console", ["consoleService", Console.Factory]);
 })(Directives || (Directives = {}));
-//@ sourceMappingURL=console.js.map
