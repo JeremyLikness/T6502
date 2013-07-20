@@ -5,7 +5,7 @@
 module Services {
     
     export interface ICpuService {
-        getCpu(): Emulator.ICpu;    
+        getCpu(): Emulator.ICpuExtended;    
         getCompiler(): Emulator.ICompiler;    
     }
 
@@ -13,7 +13,7 @@ module Services {
     
         public $injector = ['$timeout', 'consoleService', 'displayService'];
 
-        private cpu: Emulator.ICpu;
+        private cpu: Emulator.ICpuExtended;
         private compiler: Emulator.ICompiler; 
 
         constructor(
@@ -24,7 +24,7 @@ module Services {
                 this.compiler = new Emulator.Compiler(this.cpu, consoleService);
         }
 
-        public getCpu(): Emulator.ICpu {
+        public getCpu(): Emulator.ICpuExtended {
             return this.cpu;
         }
 
