@@ -13,6 +13,7 @@ var Constants;
         Memory.BranchBack = 0x7F;
         Memory.BranchOffset = 0x100;
         Memory.MaxInstructionsDecompile = 50;
+        Memory.ZeroPageRandomNumberGenerator = 0xFD;
         return Memory;
     })();
     Constants.Memory = Memory;

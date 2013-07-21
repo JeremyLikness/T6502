@@ -266,19 +266,19 @@ module Emulator {
         // set a value. Will recognize when a value is set in display memory and 
         // use the display service to update that
         poke(address: number, value: number): void {
-            this.memory[address] = value;
-            if (address >= 0xF000 && address <= 0xFFFF) {
+            this.memory[address & Constants.Memory.Max] = value & Constants.Memory.ByteMask;
+            if (address >= Constants.Display.DisplayStart && address <= Constants.Display.DisplayStart + Constants.Display.Max) {
                 this.displayService.draw(address, value);
             }
         }
 
         peek(address: number): number {
-            // special addresse 
-            if (address === 0xFD) {
+            // special address 
+            if (address === Constants.Memory.ZeroPageRandomNumberGenerator) {
                 return Math.floor(Math.random() * 0x100); 
             }
 
-            return this.memory[address];
+            return this.memory[address & 0xFFFF];
         }
 
         setFlags(value: number): void {

@@ -11,6 +11,7 @@ module Constants {
         public static BranchBack: number = 0x7F; 
         public static BranchOffset: number = 0x100;
         public static MaxInstructionsDecompile: number = 50;
+        public static ZeroPageRandomNumberGenerator: number = 0xFD;
     }
 
     export class Display {

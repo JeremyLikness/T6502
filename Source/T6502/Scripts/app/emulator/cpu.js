@@ -208,18 +208,18 @@ var Emulator;
         };
 
         Cpu.prototype.poke = function (address, value) {
-            this.memory[address] = value;
-            if (address >= 0xF000 && address <= 0xFFFF) {
+            this.memory[address & Constants.Memory.Max] = value & Constants.Memory.ByteMask;
+            if (address >= Constants.Display.DisplayStart && address <= Constants.Display.DisplayStart + Constants.Display.Max) {
                 this.displayService.draw(address, value);
             }
         };
 
         Cpu.prototype.peek = function (address) {
-            if (address === 0xFD) {
+            if (address === Constants.Memory.ZeroPageRandomNumberGenerator) {
                 return Math.floor(Math.random() * 0x100);
             }
 
-            return this.memory[address];
+            return this.memory[address & 0xFFFF];
         };
 
         Cpu.prototype.setFlags = function (value) {
