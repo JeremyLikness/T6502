@@ -45,7 +45,7 @@ var Emulator;
 
             this.started = null;
             this.elapsedMilliseconds = 0;
-            this.instructionsPerSecond = null;
+            this.instructionsPerSecond = 0;
             this.lastCheck = null;
             this.instructions = 0;
 
@@ -144,6 +144,15 @@ var Emulator;
             this.runner = this.timeoutService(function () {
                 return _this.executeBatch.apply(_this);
             }, 0, this.autoRefresh);
+
+            var now = new Date();
+            this.elapsedMilliseconds = now.getTime() - this.started.getTime();
+
+            if (now.getTime() - this.lastCheck > 1000) {
+                this.instructionsPerSecond = this.instructions;
+                this.instructions = 0;
+                this.lastCheck = now.getTime();
+            }
         };
 
         Cpu.prototype.execute = function () {
@@ -159,15 +168,6 @@ var Emulator;
             }
 
             this.instructions += 1;
-
-            var now = new Date();
-            this.elapsedMilliseconds = now.getTime() - this.started.getTime();
-
-            if (now.getTime() - this.lastCheck > 1000) {
-                this.instructionsPerSecond = this.instructions;
-                this.instructions = 0;
-                this.lastCheck = now.getTime();
-            }
         };
 
         Cpu.prototype.stackPush = function (value) {
