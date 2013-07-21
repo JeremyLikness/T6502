@@ -1,3 +1,7 @@
+///<reference path="../app.ts"/>
+///<reference path="../emulator/cpu.ts"/>
+///<reference path="../services/consoleService.ts"/>
+///<reference path="../services/cpuService.ts"/>
 var Main;
 (function (Main) {
     var MainController = (function () {
@@ -34,3 +38,4 @@ var Main;
 
     Main.App.Controllers.controller("MainCtrl", MainController);
 })(Main || (Main = {}));
+//@ sourceMappingURL=mainController.js.map

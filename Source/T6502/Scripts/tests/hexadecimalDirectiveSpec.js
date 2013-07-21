@@ -1,3 +1,9 @@
+/// <reference path='jasmine.d.ts'/>
+/// <reference path='../app/defs/angular.d.ts'/>
+/// <reference path='angular-mocks.d.ts'/>
+/// <reference path='../app/defs/jquery.d.ts'/>
+/// <reference path='../app/app.ts'/>
+/// <reference path='../app/directives/hexadecimal.ts'/>
 var Tests;
 (function (Tests) {
     describe("hexadecimal directive", function () {
@@ -39,3 +45,4 @@ var Tests;
         });
     });
 })(Tests || (Tests = {}));
+//@ sourceMappingURL=hexadecimalDirectiveSpec.js.map

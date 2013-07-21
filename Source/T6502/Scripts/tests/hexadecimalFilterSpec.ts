@@ -9,26 +9,28 @@ module Tests {
 
     describe("hexadecimal filter", () => {
   
+        var filter; 
+
         beforeEach(() => {    
             module('app');          
         });
 
+        beforeEach(() => {
+            inject(($filter) => {
+                filter = $filter('hexadecimal');
+            });
+        });
+
         describe("given invalid input when called", () => {
             it("then should return the value back", () => {        
-                return inject(($filter) => {
-                var filter: ng.IFilterService = $filter('hexadecimal');
-                expect(filter('zoo')).toEqual('zoo');
-                });
+                expect(filter('zoo')).toEqual('zoo');                
             });
         });
 
         describe("given valid input when called", () => {
           
             it("then should return the hexadecimal for the number", () => {
-                return inject(($filter) => {
-                    var filter: any = $filter('hexadecimal');
-                    expect(filter(0x7f)).toEqual('0x7F');
-                });
+                expect(filter(127)).toEqual('0x7F');                
             });
         });
     });

@@ -9,35 +9,33 @@ module Tests {
 
     describe("eightbits filter", () => {
   
+        var filter: any;
+
         beforeEach(() => {    
             module('app');          
         });
 
+        beforeEach(() => {
+            inject(($filter) => {
+                filter = $filter('eightbits');
+            });
+        });
+
         describe("given invalid input when called", () => {
             it("then should return the value back", () => {        
-                return inject(($filter) => {
-                var filter: ng.IFilterService = $filter('eightbits');
-                expect(filter('zoo')).toEqual('zoo');
-                });
+                expect(filter('zoo')).toEqual('zoo');                
             });
         });
 
         describe("given valid input when called", () => {
           
             it("then should return the bits for the number", () => {
-                return inject(($filter) => {
-                    var filter: any = $filter('eightbits');
-                    expect(filter(0xff)).toEqual('11111111');
-                });
+                expect(filter(0xff)).toEqual('11111111');                
             });
             
             it("with smaller number then should pad bits to 8 places", () => {
-                return inject(($filter) => {
-                    var filter: any = $filter('eightbits');
-                    expect(filter(0x01)).toEqual('00000001');
-                });
-            });
-          
+                expect(filter(0x01)).toEqual('00000001');                
+            });          
         });
     });
 }

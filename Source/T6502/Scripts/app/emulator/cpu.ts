@@ -112,7 +112,7 @@ module Emulator {
             
             this.started = null;
             this.elapsedMilliseconds = 0;
-            this.instructionsPerSecond = null;
+            this.instructionsPerSecond = 0;
             this.lastCheck = null;
             this.instructions = 0;
 
@@ -188,6 +188,15 @@ module Emulator {
 
             // run again
             this.runner = this.timeoutService(() => this.executeBatch.apply(this), 0, this.autoRefresh);            
+
+            var now = new Date();
+            this.elapsedMilliseconds = now.getTime() - this.started.getTime();
+
+            if (now.getTime() - this.lastCheck > 1000) {
+                this.instructionsPerSecond = this.instructions;
+                this.instructions = 0;
+                this.lastCheck = now.getTime();
+            }
         }
 
         // main loop - op codes update their own program counter so this just contiuously
@@ -206,16 +215,7 @@ module Emulator {
             }
 
             // track instructions per second 
-            this.instructions += 1;
-
-            var now = new Date();
-            this.elapsedMilliseconds = now.getTime() - this.started.getTime();
-
-            if (now.getTime() - this.lastCheck > 1000) {
-                this.instructionsPerSecond = this.instructions;
-                this.instructions = 0;
-                this.lastCheck = now.getTime();
-            }                      
+            this.instructions += 1;                                  
         }
 
         // push a value to the stack or throw an exception when full

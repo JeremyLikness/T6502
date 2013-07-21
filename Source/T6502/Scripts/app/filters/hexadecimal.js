@@ -1,3 +1,4 @@
+///<reference path="../app.ts"/>
 var Filters;
 (function (Filters) {
     var HexadecimalFilter = (function () {
@@ -18,3 +19,4 @@ var Filters;
 
     Main.App.Filters.filter("hexadecimal", [HexadecimalFilter.Factory]);
 })(Filters || (Filters = {}));
+//@ sourceMappingURL=hexadecimal.js.map

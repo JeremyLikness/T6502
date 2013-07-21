@@ -44,6 +44,20 @@
       <DependentUpon>consoleServiceSpec.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="Scripts\tests\displayServiceSpec.ts" />
+    <TypeScriptCompile Include="Scripts\tests\cpuServiceSpec.ts" />
+    <Content Include="Scripts\tests\cpuServiceSpec.js">
+      <DependentUpon>cpuServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\cpuServiceSpec.min.js">
+      <DependentUpon>cpuServiceSpec.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\cpuSpec.ts" />
+    <Content Include="Scripts\tests\cpuSpec.js">
+      <DependentUpon>cpuSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\cpuSpec.min.js">
+      <DependentUpon>cpuSpec.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\tests\displayServiceSpec.js">
       <DependentUpon>displayServiceSpec.ts</DependentUpon>
     </Content>
@@ -94,6 +108,12 @@
     </Content>
     <Content Include="Scripts\tests\displayServiceSpec.js.map">
       <DependentUpon>displayServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\cpuServiceSpec.js.map">
+      <DependentUpon>cpuServiceSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\cpuSpec.js.map">
+      <DependentUpon>cpuSpec.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
