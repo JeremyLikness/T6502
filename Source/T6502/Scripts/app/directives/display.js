@@ -1,16 +1,12 @@
 ///<reference path="../app.ts"/>
 ///<reference path="../services/consoleService.ts"/>
 ///<reference path="../services/displayService.ts"/>
+///<reference path="palette.ts"/>
 var Directives;
 (function (Directives) {
     var Display = (function () {
         function Display() {
         }
-        Display.ToHex = function (value) {
-            var result = value.toString(16);
-            return result.length == 1 ? "0" + result : result;
-        };
-
         Display.MakeSvg = function (tag, attrs) {
             var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
             for (var attr in attrs) {
@@ -30,11 +26,7 @@ var Directives;
                 scope: {},
                 link: function (scope, element, attrs) {
                     var element = angular.element(element);
-                    var lowValues = [0x10, 0x40, 0x70, 0xa0, 0xd0, 0xff];
-                    var greenValues = [0x10, 0x38, 0x60, 0x88, 0xb0, 0xd8, 0xff];
                     var x, xoffs, y, yoffs, idx;
-                    var red, green, blue;
-                    var redValue, blueValue, greenValue;
 
                     var svg = $(element).get(0).childNodes[0];
 
@@ -43,28 +35,9 @@ var Directives;
                     pixelBuffer = angular.copy(displayService.pixels);
 
                     displayBuffer = [];
-                    palette = [];
 
-                    for (red = 0; red < 6; red += 1) {
-                        for (green = 0; green < 7; green += 1) {
-                            for (blue = 0; blue < 6; blue += 1) {
-                                redValue = lowValues[red];
-                                greenValue = greenValues[green];
-                                blueValue = lowValues[blue];
-                                idx = ((red * 7 + green) * 6) + blue;
-                                if (idx === 0) {
-                                    redValue = greenValue = blueValue = 0;
-                                }
-                                palette[idx] = "#" + Display.ToHex(redValue) + Display.ToHex(greenValue) + Display.ToHex(blueValue);
-                            }
-                        }
-                    }
-
-                    palette[0xfb] = "#111111";
-                    palette[0xfc] = "#555555";
-                    palette[0xfd] = "#999999";
-                    palette[0xfe] = "#cccccc";
-                    palette[0xff] = "#ffffff";
+                    var paletteGenerator = new Directives.Palette();
+                    palette = paletteGenerator.getPalette();
 
                     consoleService.log("Palette has been generated.");
 

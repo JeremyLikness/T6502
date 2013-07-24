@@ -20,10 +20,18 @@
     <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="compilertests.htm" />
     <Content Include="Content\jasmine\jasmine.css" />
     <Content Include="Content\jasmine\jasmine_favicon.png" />
     <Content Include="Scripts\app\controllers\mainController.js.map">
       <DependentUpon>mainController.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\app\directives\palette.ts" />
+    <Content Include="Scripts\app\directives\palette.js">
+      <DependentUpon>palette.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\app\directives\palette.min.js">
+      <DependentUpon>palette.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\jasmine-samples\Player.js" />
     <Content Include="Scripts\jasmine-samples\PlayerSpec.js" />
@@ -37,6 +45,13 @@
       <DependentUpon>angular-mocks.d.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="Scripts\tests\consoleServiceSpec.ts" />
+    <Content Include="Scripts\tests\compileSpec.js">
+      <DependentUpon>compileSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\compileSpec.min.js">
+      <DependentUpon>compileSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\compileSpec.ts" />
     <Content Include="Scripts\tests\consoleServiceSpec.js">
       <DependentUpon>consoleServiceSpec.ts</DependentUpon>
     </Content>
@@ -114,6 +129,9 @@
     </Content>
     <Content Include="Scripts\tests\cpuSpec.js.map">
       <DependentUpon>cpuSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\app\directives\palette.js.map">
+      <DependentUpon>palette.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

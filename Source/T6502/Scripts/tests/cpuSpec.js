@@ -1,3 +1,9 @@
+/// <reference path='jasmine.d.ts'/>
+/// <reference path='../app/defs/angular.d.ts'/>
+/// <reference path='angular-mocks.d.ts'/>
+/// <reference path='../app/defs/jquery.d.ts'/>
+/// <reference path='../app/app.ts'/>
+/// <reference path='../app/emulator/cpu.ts'/>
 var Tests;
 (function (Tests) {
     describe("cpu", function () {
@@ -85,6 +91,41 @@ var Tests;
                 runs(function () {
                     expect(cpu.runningState).toBe(false);
                 });
+            });
+        });
+
+        describe("given cpu that is running when halt called", function () {
+            var consoleLines;
+
+            beforeEach(function () {
+                loadInfiniteLoop();
+
+                cpu.run();
+                var done = false;
+
+                runs(function () {
+                    setTimeout(function () {
+                        consoleLines = console.lines.length;
+                        cpu.halt();
+                        done = true;
+                    }, 10);
+                });
+
+                waitsFor(function () {
+                    return done;
+                }, "Failed to stop the cpu.", 1000);
+            });
+
+            it("then should set running state to false", function () {
+                expect(cpu.runningState).toBe(false);
+            });
+
+            it("then should set error state to true", function () {
+                expect(cpu.errorState).toBe(true);
+            });
+
+            it("then should log the halt to the console", function () {
+                expect(console.lines.length).toBeGreaterThan(consoleLines);
             });
         });
 
@@ -357,3 +398,4 @@ var Tests;
         });
     });
 })(Tests || (Tests = {}));
+//@ sourceMappingURL=cpuSpec.js.map

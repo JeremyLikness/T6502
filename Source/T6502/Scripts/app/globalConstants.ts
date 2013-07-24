@@ -11,7 +11,11 @@ module Constants {
         public static BranchBack: number = 0x7F; 
         public static BranchOffset: number = 0x100;
         public static MaxInstructionsDecompile: number = 50;
+        public static ZeroPageTimerSeconds: number = 0xFB; 
+        public static ZeroPageTimerMilliseconds: number = 0xFC;
         public static ZeroPageRandomNumberGenerator: number = 0xFD;
+        public static ZeroPageCharacterOutput: number = 0xFE; 
+        public static ZeroPageCharacterInput: number = 0xFF; 
     }
 
     export class Display {
