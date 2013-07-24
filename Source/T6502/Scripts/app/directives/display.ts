@@ -1,15 +1,11 @@
 ///<reference path="../app.ts"/>
 ///<reference path="../services/consoleService.ts"/>
 ///<reference path="../services/displayService.ts"/>
+///<reference path="palette.ts"/>
 
 module Directives {
 
     export class Display {
-
-        private static ToHex(value: number): string {
-            var result = value.toString(16);
-            return result.length == 1 ? "0" + result : result;
-        }
 
         private static MakeSvg(tag: string, attrs: any): any {
             var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -38,11 +34,7 @@ module Directives {
                 link: function (scope: ng.IScope, element, attrs) {
                     
                     var element: any = angular.element(element);
-                    var lowValues: number[] = [ 0x10, 0x40, 0x70, 0xa0, 0xd0, 0xff ];
-                    var greenValues: number[] = [ 0x10, 0x38, 0x60, 0x88, 0xb0, 0xd8, 0xff ];
                     var x: number, xoffs: number, y: number, yoffs: number, idx: number;
-                    var red: number, green: number, blue: number;
-                    var redValue: number, blueValue: number, greenValue: number;
                     
                     var svg = $(element).get(0).childNodes[0];
                     
@@ -51,32 +43,10 @@ module Directives {
                     pixelBuffer = angular.copy(displayService.pixels);
                     
                     displayBuffer = [];
-                    palette = [];
 
-                    // palette slightly favors green, builds all combinations from dark to light
-                    // then adds 5 shades of gray ending in white
-                    for (red = 0; red < 6; red += 1) {
-                        for (green = 0; green < 7; green += 1) {
-                            for (blue = 0; blue < 6; blue += 1) {
-                                redValue = lowValues[red];
-                                greenValue = greenValues[green];
-                                blueValue = lowValues[blue];
-                                idx = ((red * 7 + green) * 6) + blue;
-                                if (idx === 0) {
-                                    redValue = greenValue = blueValue = 0;
-                                }
-                                palette[idx] = "#" + Display.ToHex(redValue) + Display.ToHex(greenValue)
-                                    + Display.ToHex(blueValue);                                                                
-                            }
-                        }
-                    }
+                    var paletteGenerator: Directives.Palette = new Directives.Palette();
+                    palette = paletteGenerator.getPalette();
 
-                    palette[0xfb] = "#111111"; 
-                    palette[0xfc] = "#555555";
-                    palette[0xfd] = "#999999";
-                    palette[0xfe] = "#cccccc";
-                    palette[0xff] = "#ffffff"; 
-                    
                     consoleService.log("Palette has been generated.");
 
                     // the 0x1000 display means a 64 x 64 matrix, we draw on a 192 x 192 surface 

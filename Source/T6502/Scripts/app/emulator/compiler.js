@@ -2,7 +2,19 @@ var Emulator;
 (function (Emulator) {
     var Compiler = (function () {
         function Compiler(cpu, consoleService) {
-            this.opCode = /^\s+([A-Za-z]{3})\s*(\S*)/;
+            this.opCode = /^\s*([A-Z]{3})\s*\S*/;
+            this.notWhitespace = /\S/;
+            this.whitespaceTrim = /^\s+/;
+            this.whitespaceTrimEnd = /\s+$/;
+            this.comment = /^\;.*/;
+            this.memoryLabelHex = /^(\$[0-9A-F]+):.*/;
+            this.memoryLabelDec = /^([0-9]+):.*/;
+            this.regularLabel = /^(\w+):.*/;
+            this.memorySet = /^\*[\s]*=[\s]*[\$]?[0-9a-f]*$/;
+            this.setAddress = /^[\s]*\*[\s]*=[\s]*/;
+            this.removeHex = /^\$/;
+            this.immediateHex = /^\#\$([0-9A-F]{1,2})\s*/;
+            this.immediateDec = /^\#(\d{1,3})\s*/;
             this.cpu = cpu;
             this.consoleService = consoleService;
             this.opCodeCache = {};
@@ -33,76 +45,82 @@ var Emulator;
 
         Compiler.prototype.compile = function (source) {
             var lines = source.split('\n');
+            this.pcAddress = this.cpu.rPC;
 
             this.consoleService.log("Starting compilation.");
 
             try  {
-                var compilerResult = this.compileSource(lines);
-                this.consoleService.log("Compilation passes complete; moving buffer into memory at $" + compilerResult.startAddress.toString(16).toUpperCase());
+                var compiled = this.parseLabels(lines);
+                compiled = this.compileSource(compiled);
+                this.consoleService.log("Compilation complete.");
+                var idx;
+                var offset;
+                for (idx = 0; idx < compiled.compiledLines.length; idx++) {
+                    var compiledLine = compiled.compiledLines[idx];
+                    for (offset = 0; offset < compiledLine.code.length; offset++) {
+                        this.cpu.poke(compiledLine.address + offset, compiledLine.code[offset]);
+                    }
+                }
+                this.consoleService.log("Code loaded to memory.");
+                this.cpu.rPC = this.pcAddress;
             } catch (e) {
                 this.consoleService.log(e);
+                return false;
             }
+
+            return true;
         };
 
-        Compiler.prototype.compileSource = function (lines) {
-            var compilerResult = {
-                startAddress: Constants.Memory.DefaultStart,
-                opCodes: []
-            };
-
-            var address = compilerResult.startAddress;
-            var addressSet = false;
-            var memoryIgnore = false;
-            var notWhitespace = /\S/;
-            var whitespaceTrim = /^\s+/;
-            var whitespaceTrimEnd = /\s+$/;
-            var comment = /^\;.*/;
-            var memoryLabel = /^(\$\w+):.*/;
-            var regularLabel = /^(\w+):.*/;
-            var labels = [];
+        Compiler.prototype.parseLabels = function (lines) {
+            var address = Constants.Memory.DefaultStart;
             var label;
             var opCodeLabel;
             var buffer = [];
             var memoryLabels = 0;
             var actualLabels = 0;
             var idx;
+            var parameter;
+
+            var result = {
+                labels: [],
+                compiledLines: []
+            };
 
             this.consoleService.log("Starting compilation pass 1.");
 
             for (idx = 0; idx < lines.length; idx++) {
-                var input = lines[idx];
+                var input = lines[idx].toUpperCase();
 
-                if (!notWhitespace.test(input)) {
+                input = this.trimLine(input);
+
+                if (!input.match(this.notWhitespace)) {
                     continue;
                 }
 
-                if (comment.test(input)) {
+                var testAddress = this.moveAddress(input);
+
+                if (!(isNaN(testAddress))) {
+                    this.pcAddress = testAddress;
+                    address = testAddress;
                     continue;
                 }
 
-                input = input.replace(whitespaceTrim, "").replace(whitespaceTrimEnd, "");
-
-                if (input.match(memoryLabel)) {
+                if (input.match(this.memoryLabelHex) || input.match(this.memoryLabelDec)) {
                     memoryLabels++;
-
-                    label = memoryLabel.exec(input)[1];
+                    var hex = input.match(this.memoryLabelHex);
+                    label = hex ? this.memoryLabelHex.exec(input)[1] : this.memoryLabelDec.exec(input)[1];
 
                     input = input.replace(label + ":", "");
 
-                    if (!addressSet) {
-                        addressSet = true;
-                        label = label.replace("$", "");
-                        compilerResult.startAddress = parseInt(label, 16);
-                    } else {
-                        memoryIgnore = true;
-                    }
+                    label = label.replace(this.removeHex, "");
+                    address = parseInt(label, hex ? 16 : 10);
                 } else {
-                    if (input.match(regularLabel)) {
-                        label = regularLabel.exec(input)[1].toUpperCase();
-                        if (this.labelExists(label, labels)) {
+                    if (input.match(this.regularLabel)) {
+                        label = this.regularLabel.exec(input)[1];
+                        if (this.labelExists(label, result.labels)) {
                             throw "Duplicate label " + label + " found at line " + (idx + 1);
                         }
-                        labels.push({
+                        result.labels.push({
                             address: address,
                             labelName: label
                         });
@@ -111,38 +129,107 @@ var Emulator;
                     }
                 }
 
-                if (input.match(comment)) {
+                if (!input.match(this.notWhitespace)) {
                     continue;
                 }
 
-                if (!input.match(notWhitespace)) {
-                    continue;
-                }
-
-                if (input.match(this.opCode)) {
-                    try  {
-                        var instructions = this.parseOpCode(input);
-                    } catch (e) {
-                        throw e + " (Line " + (idx + 1) + ").";
-                    }
-                } else {
-                    throw "Invalid assembly line " + (idx + 1) + ": " + lines[idx] + ".";
+                try  {
+                    var compiledLine = this.compileLine(result.labels, address, input);
+                    result.compiledLines.push(compiledLine);
+                    address += compiledLine.code.length;
+                } catch (e) {
+                    throw e + " Line: " + (idx + 1);
                 }
             }
 
-            if (memoryIgnore) {
-                this.consoleService.log("Compilation address may only be set once. Some memory labels were ignored.");
-            }
             this.consoleService.log("Parsed " + memoryLabels + " memory tags and " + actualLabels + " labels.");
+
+            return result;
+        };
+
+        Compiler.prototype.compileLine = function (labels, address, input) {
+            var result = {
+                address: address,
+                code: [],
+                processed: false,
+                label: ""
+            };
+
+            if (input.match(this.opCode)) {
+                result = this.parseOpCode(labels, input, result);
+            } else {
+                throw "Invalid assembly " + input;
+            }
+
+            return result;
+        };
+
+        Compiler.prototype.compileSource = function (compilerResult) {
+            this.consoleService.log("Starting compilation pass 2.");
+
+            var idx;
+
+            for (idx = 0; idx < compilerResult.compiledLines.length; idx++) {
+                var compiledLine = compilerResult.compiledLines[idx];
+                if (!compiledLine.processed) {
+                    throw "Not implemented";
+                }
+            }
 
             return compilerResult;
         };
 
-        Compiler.prototype.parseOpCode = function (opCodeExpression) {
-            var returnValue = [];
-            var matches = this.opCode.exec(opCodeExpression);
+        Compiler.prototype.trimLine = function (input) {
+            if (!this.notWhitespace.test(input)) {
+                return "";
+            }
 
-            var opCodeName = matches[1].toUpperCase();
+            if (this.comment.test(input)) {
+                return "";
+            }
+
+            input = input.replace(this.whitespaceTrim, "").replace(this.whitespaceTrimEnd, "");
+
+            return input;
+        };
+
+        Compiler.prototype.moveAddress = function (input) {
+            var parameter;
+            var address = NaN;
+
+            if (input.match(this.memorySet)) {
+                parameter = input.replace(this.setAddress, "");
+                if (parameter[0] === "$") {
+                    parameter = parameter.replace(this.removeHex, "");
+                    address = parseInt(parameter, 16);
+                } else {
+                    address = parseInt(parameter, 10);
+                }
+
+                if ((address < 0) || (address > Constants.Memory.Max)) {
+                    throw "Address out of range";
+                }
+            }
+
+            return address;
+        };
+
+        Compiler.prototype.getOperationForMode = function (operations, addressMode) {
+            var idx = 0;
+            for (idx = 0; idx < operations.length; idx++) {
+                if (operations[idx].addressingMode === addressMode) {
+                    return operations[idx];
+                }
+            }
+
+            return null;
+        };
+
+        Compiler.prototype.parseOpCode = function (labels, opCodeExpression, compiledLine) {
+            var matches = this.opCode.exec(opCodeExpression);
+            var idx;
+
+            var opCodeName = matches[1];
             var operations = [];
 
             if (opCodeName in this.opCodeCache) {
@@ -156,13 +243,50 @@ var Emulator;
                 }
             }
 
-            return returnValue;
+            var parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
+
+            if (!parameter.match(this.notWhitespace)) {
+                var operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeSingle);
+                if (operation === null) {
+                    throw "Opcode requires a parameter " + opCodeName;
+                }
+                compiledLine.code.push(operation.opCode);
+                compiledLine.processed = true;
+                return compiledLine;
+            }
+
+            if (parameter.match(this.immediateHex) || parameter.match(this.immediateDec)) {
+                var hex = parameter[1] === "$";
+                var rawValue = parameter.match(hex ? this.immediateHex : this.immediateDec)[1];
+                var value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.ByteMask) {
+                    throw "Immediate value of out range: " + value;
+                }
+
+                parameter = parameter.replace(hex ? "#$" : "#", "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                var operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeImmediate);
+                if (operation === null) {
+                    throw "Opcode doesn't support immediate mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value);
+                compiledLine.processed = true;
+                return compiledLine;
+            }
+
+            return compiledLine;
         };
 
         Compiler.prototype.labelExists = function (label, labels) {
-            var idx;
-            for (idx = 0; idx < labels.length; idx++) {
-                if (labels[idx].labelName === label) {
+            var index;
+            for (index = 0; index < labels.length; index++) {
+                if (labels[index].labelName === label) {
                     return true;
                 }
             }

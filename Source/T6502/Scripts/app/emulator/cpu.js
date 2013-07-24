@@ -97,6 +97,7 @@ var Emulator;
                 0x1A,
                 0x02
             ];
+
             for (idx = 0; idx < program.length; idx++) {
                 this.poke(Constants.Memory.DefaultStart + idx, program[idx]);
             }
@@ -136,6 +137,10 @@ var Emulator;
 
         Cpu.prototype.executeBatch = function () {
             var _this = this;
+            if (!this.runningState || this.errorState) {
+                return;
+            }
+
             var instructions = 0xff;
             while (instructions--) {
                 this.execute();

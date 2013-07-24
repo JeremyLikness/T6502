@@ -93,6 +93,40 @@ module Tests {
                     expect(cpu.runningState).toBe(false);                    
                 });
             });
+        });
+        
+        describe("given cpu that is running when halt called", () => {
+
+            var consoleLines: number;
+
+            beforeEach(() => {
+                loadInfiniteLoop();
+
+                cpu.run();
+                var done: boolean = false; 
+
+                runs(() => {
+                    setTimeout(() => {
+                        consoleLines = console.lines.length;
+                        cpu.halt();
+                        done = true;
+                    }, 10);
+                });
+
+                waitsFor(() => done, "Failed to stop the cpu.", 1000);                
+            });
+
+            it("then should set running state to false", () => {
+                expect(cpu.runningState).toBe(false);                    
+            });
+
+            it("then should set error state to true", () => {
+                expect(cpu.errorState).toBe(true);
+            });
+
+            it("then should log the halt to the console", () => {
+                expect(console.lines.length).toBeGreaterThan(consoleLines);
+            });
         });        
 
         describe("given cpu that is running when run called", () => {

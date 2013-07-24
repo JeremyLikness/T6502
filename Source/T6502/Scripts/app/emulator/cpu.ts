@@ -142,6 +142,24 @@ module Emulator {
                 0xE8,             // INX   
                 0x4C, 0x1A, 0x02  // JMP CYCLE 
             ];
+
+            //program = [
+            //    0xA2, 0x0D, // START: LDX #$00
+            //    0xA9, 0x00,  // LDA #$00
+            //    0x85, 0x00, // STA $0
+            //    0xa9, 0xFC, // LDA #$FC 
+            //    0x85, 0x01, // STA $1 
+            //    0xa0, 0x00, // LDY #$00 
+            //    0xa9, 0x00, // WRITE: LDA #$00
+            //    0x91, 0x00, // STA ($0), Y 
+            //    0xFE, 0x00, 0x02, // INC $0200, X
+            //    0xE6, 0x00, // INC $0 
+            //    0xD0, 0xF5, // BNE WRITE 
+            //    0xE6, 0x01, // INC $1 
+            //    0xD0, 0xF1, // BNE WRITE 
+            //    0x60  // RTS
+            //];
+
             for (idx = 0; idx < program.length; idx++) {
                 this.poke(Constants.Memory.DefaultStart + idx, program[idx]);
             }
@@ -181,6 +199,10 @@ module Emulator {
         // this is the main execution loop that pauses every few sets to allow events, etc.
         // to be processed. Adjust the number of instructions down if the app is not responsive
         private executeBatch() {
+            if (!this.runningState || this.errorState) {
+                return;
+            }
+
             var instructions: number = 0xff;
             while (instructions--) {
                 this.execute();
