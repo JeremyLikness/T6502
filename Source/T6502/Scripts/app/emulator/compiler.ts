@@ -3,23 +3,30 @@
 
 module Emulator {
 
+    // instance of the compiler/decompiler
     export interface ICompiler {
         compile(source: string): bool;
         decompile(startAddress: number): string;
     }
 
+    // label includes the name for the label and its address
     export interface ILabel {
         address: number;
         labelName: string;
     }
 
+    // a compiled line including the address it is at, any code, whether the 
+    // label has been processed, the name of the label, and a high flag indicator
+    // for resolving immediate mode labels (i.e. #<label and #>label)
     export interface ICompiledLine {
         address: number;
         code: number[];
         processed: boolean;
         label: string;
+        high: boolean;
     }
 
+    // the result of a compilation, which includes labels and compiled lines
     export interface ICompilerResult {
         labels: ILabel[];
         compiledLines: ICompiledLine[];
@@ -27,23 +34,28 @@ module Emulator {
 
     export class Compiler implements ICompiler {
     
-        private pcAddress: number;
-        private cpu: Emulator.ICpuExtended;
+        private pcAddress: number; // current address set by source
+        private cpu: Emulator.ICpuExtended; 
         private consoleService: Services.ConsoleService;
         private opCodeCache: { [opCodeName: string] : IOperation[] };
-        private opCode: RegExp = /^\s*([A-Z]{3})\s*\S*/;            
-        private notWhitespace: RegExp = /\S/;
-        private whitespaceTrim: RegExp = /^\s+/;
-        private whitespaceTrimEnd: RegExp = /\s+$/;
-        private comment: RegExp = /^\;.*/;
-        private memoryLabelHex: RegExp = /^(\$[0-9A-F]+):.*/;
-        private memoryLabelDec: RegExp = /^([0-9]+):.*/;
-        private regularLabel: RegExp = /^(\w+):.*/;
-        private memorySet: RegExp = /^\*[\s]*=[\s]*[\$]?[0-9a-f]*$/;
-        private setAddress: RegExp = /^[\s]*\*[\s]*=[\s]*/;
-        private removeHex: RegExp = /^\$/;
-        private immediateHex: RegExp = /^\#\$([0-9A-F]{1,2})\s*/;
-        private immediateDec: RegExp = /^\#(\d{1,3})\s*/;
+        private opCode: RegExp = /^\s*([A-Z]{3})\s*\S*/;  // matches an op code          
+        private notWhitespace: RegExp = /\S/; // true when there is non-whitespace
+        private whitespaceTrim: RegExp = /^\s+/; // trim whitespace
+        private whitespaceTrimEnd: RegExp = /\s+$/; // further trim whitespace
+        private comment: RegExp = /^\;.*/; // ; comment line
+        private memoryLabelHex: RegExp = /^(\$[0-9A-F]+):.*/; // $C000:
+        private memoryLabelDec: RegExp = /^([0-9]+):.*/; // 49152:
+        private regularLabel: RegExp = /^(\w+):.*/; // LABEL:
+        private memorySet: RegExp = /^\*\s*\=\s*[\$]?[0-9A-F]*$/; // *=$C000 or *=49152
+        private setAddress: RegExp = /^[\s]*\*[\s]*=[\s]*/; // for parsing out the value
+        private immediate: RegExp = /^\#\$?([0-9A-F]{1,3})\s*/; // #$0A
+        private immediateLabel: RegExp = /^\#([<>])(\w+)\s*/; // #<label or #>label 
+        private absoluteX: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/; // $C000, X 
+        private absoluteXLabel: RegExp = /^(\w+)(\,\s*X)\s*/; // LABEL, X 
+        private absoluteY: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/; // $C000, Y 
+        private absoluteYLabel: RegExp = /^(\w+)(\,\s*Y)\s*/; // LABEL, Y 
+        private absolute: RegExp = /^\$?([0-9A-F]{1,5})\s*/;  // JMP $C000
+        private absoluteLabel: RegExp = /^(\w+)\s*/; // JMP LABEL
             
         constructor(
             cpu: Emulator.ICpuExtended, 
@@ -87,9 +99,17 @@ module Emulator {
             this.consoleService.log("Starting compilation.");          
             
             try {
+                // first pass actually compiles and picks up labels, then flags 
+                // compiled lines that must be updated because they reference labels
+                // that are defined later 
                 var compiled: ICompilerResult = this.parseLabels(lines);
+
+                // this pass simply goes through and updates the labels or throws 
+                // an exception if a label is not found 
                 compiled = this.compileSource(compiled);
+
                 this.consoleService.log("Compilation complete.");
+                
                 var idx: number;
                 var offset: number;
                 for (idx = 0; idx < compiled.compiledLines.length; idx++) {
@@ -99,8 +119,7 @@ module Emulator {
                     }
                 }
                 this.consoleService.log("Code loaded to memory.");
-                this.cpu.rPC = this.pcAddress;
-
+                this.cpu.rPC = this.pcAddress; // most recent address set in source
             }
             catch (e) {
                 this.consoleService.log(e);
@@ -110,6 +129,8 @@ module Emulator {
             return true;
         }
         
+        // parses out labels but compiles as it goes because it needs to know the size
+        // of the current line to keep track of labels
         private parseLabels(lines: string[]): ICompilerResult {
             
             var address: number = Constants.Memory.DefaultStart;
@@ -138,14 +159,16 @@ module Emulator {
                     continue;
                 }
 
+                // check if the user is setting the address
                 var testAddress: number = this.moveAddress(input);
 
+                // if so, update that and continue
                 if (!(isNaN(testAddress))) {
                     this.pcAddress = testAddress;
                     address = testAddress;
                     continue;
                 }
-
+                
                 if(input.match(this.memoryLabelHex) || input.match(this.memoryLabelDec)) {
                     
                     memoryLabels++;                    
@@ -156,8 +179,14 @@ module Emulator {
                     input = input.replace(label + ":", "");
 
                     // strip hex out if applicable
-                    label = label.replace(this.removeHex, "");
-                    address = parseInt(label, hex ? 16 : 10);                                        
+                    label = label.replace("$", "");
+                    address = parseInt(label, hex ? 16 : 10); 
+                    
+                    if (address < 0 || address > Constants.Memory.Max) {
+                        throw "Address out of range: " + label; 
+                    }                                    
+                    
+                    this.pcAddress = address;   
                 }
                 else {
                     if (input.match(this.regularLabel)) {
@@ -201,7 +230,8 @@ module Emulator {
                 address: address,
                 code: [],
                 processed: false,
-                label: ""
+                label: "",
+                high: false
             };
 
             if (input.match(this.opCode)) {
@@ -212,22 +242,6 @@ module Emulator {
             }
             
             return result;
-        }
-
-        private compileSource(compilerResult: ICompilerResult): ICompilerResult {
-
-            this.consoleService.log("Starting compilation pass 2.");
-
-            var idx: number;
-
-            for (idx = 0; idx < compilerResult.compiledLines.length; idx ++) {
-                var compiledLine = compilerResult.compiledLines[idx];
-                if (!compiledLine.processed) {
-                    throw "Not implemented";
-                }
-            }
-
-            return compilerResult;
         }
 
         private trimLine(input: string): string {
@@ -256,7 +270,7 @@ module Emulator {
             if (input.match(this.memorySet)) {
                 parameter = input.replace(this.setAddress, "");
                 if(parameter[0] === "$" ) {
-                    parameter = parameter.replace(this.removeHex, "");
+                    parameter = parameter.replace("$", "");
                     address = parseInt(parameter, 16);
                 } 
                 else {
@@ -285,10 +299,21 @@ module Emulator {
         private parseOpCode(labels: ILabel[], opCodeExpression: string, compiledLine: ICompiledLine): ICompiledLine {
             
             var matches: RegExpExecArray = this.opCode.exec(opCodeExpression);
+            var matchArray: string[];
             var idx: number;
-
+            var hex: boolean;
+            var rawValue: string;
+            var value: number;
+            var xIndex: string;
+            var yIndex: string;
+            var operation: IOperation;
             var opCodeName: string = matches[1];
             var operations: IOperation[] = [];
+            var parameter: string;
+            var labelReady: boolean;
+            var label: string;
+            var labelInstance: ILabel;
+            var processed: boolean;
 
             if (opCodeName in this.opCodeCache) {
                 operations = this.opCodeCache[opCodeName];
@@ -303,24 +328,46 @@ module Emulator {
                 }
             }
 
-            var parameter: string = this.trimLine(opCodeExpression.replace(opCodeName, ""));
+            processed = true;
+
+            parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
 
             // single only 
             if (!parameter.match(this.notWhitespace)) {
-                var operation: IOperation = this.getOperationForMode(operations, OpCodes.ModeSingle);
+                operation = this.getOperationForMode(operations, OpCodes.ModeSingle);
                 if (operation === null) {
                     throw "Opcode requires a parameter " + opCodeName;
                 }
                 compiledLine.code.push(operation.opCode);
-                compiledLine.processed = true;
+                compiledLine.processed = processed;
                 return compiledLine;
             }
 
+            // immediate with label 
+            if (!parameter.match(this.immediate)) {
+                if (matchArray = parameter.match(this.immediateLabel)) {
+                    compiledLine.high = matchArray[1] === ">"; 
+                    label = matchArray[2];
+                    labelInstance = this.findLabel(label, labels);
+                    if (labelInstance !== null) {
+                        value = compiledLine.high ? (labelInstance.address >> Constants.Memory.BitsInByte) : 
+                            labelInstance.address;
+                        parameter = parameter.replace(matchArray[0], "#" + (value & Constants.Memory.ByteMask).toString(10));
+                    }
+                    else {
+                        compiledLine.label = label;
+                        processed = false;
+                        parameter = parameter.replace(matchArray[0], "#0");
+                    }
+                }
+            }
+
             // immediate mode 
-            if (parameter.match(this.immediateHex) || parameter.match(this.immediateDec)) {
-                var hex: boolean = parameter[1] === "$"; 
-                var rawValue: string = parameter.match(hex ? this.immediateHex : this.immediateDec)[1];
-                var value: number = parseInt(rawValue, hex ? 16 : 10);
+            if (matchArray = parameter.match(this.immediate)) {
+                
+                hex = parameter[1] === "$"; 
+                rawValue = matchArray[1];
+                value = parseInt(rawValue, hex ? 16 : 10);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Immediate value of out range: " + value;
                 }
@@ -332,13 +379,125 @@ module Emulator {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
-                var operation: IOperation = this.getOperationForMode(operations, OpCodes.ModeImmediate);
+                operation = this.getOperationForMode(operations, OpCodes.ModeImmediate);
                 if (operation === null) {
                     throw "Opcode doesn't support immediate mode " + opCodeName;
                 }
 
                 compiledLine.code.push(operation.opCode);
                 compiledLine.code.push(value);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteX, this.absoluteXLabel);
+            processed = compiledLine.processed; 
+            
+            // absolute with X-index mode 
+            if (matchArray = parameter.match(this.absoluteX)) {
+                hex = parameter[0] === "$";
+                rawValue = matchArray[1];
+                xIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute X-Indexed value of out range: " + value;
+                }
+
+                // strip the value to find what's remaining
+                if (hex) { 
+                    parameter = parameter.replace("$", "");
+                }
+
+                // strip the index
+                parameter = parameter.replace(xIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+                
+                operation = this.getOperationForMode(operations, OpCodes.ModeAbsoluteX);
+                if (operation === null) {
+                    throw "Opcode doesn't support absolute X-indexed mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
+            // absolute with Y-index label 
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteY, this.absoluteYLabel);
+            processed = compiledLine.processed;
+
+            // absolute with Y-index mode 
+            if (matchArray = parameter.match(this.absoluteY)) {
+                hex = parameter[0] === "$";
+                rawValue = matchArray[1];
+                yIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute Y-Indexed value of out range: " + value;
+                }
+
+                // strip the value to find what's remaining
+                if (hex) { 
+                    parameter = parameter.replace("$", "");
+                }
+
+                // strip the index
+                parameter = parameter.replace(yIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+                
+                operation = this.getOperationForMode(operations, OpCodes.ModeAbsoluteY);
+                if (operation === null) {
+                    throw "Opcode doesn't support absolute Y-indexed mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
+                compiledLine.processed = true;
+                return compiledLine;
+            }
+
+            // absolute with label 
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+            processed = compiledLine.processed;
+
+            // absolute mode 
+            if (matchArray = parameter.match(this.absolute)) {
+                hex = parameter[0] === "$"; 
+                rawValue = matchArray[1];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute value of out range: " + value;
+                }
+
+                // strip the value to find what's remaining
+                if (hex) { 
+                    parameter = parameter.replace("$", "");
+                }
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+                
+                operation = this.getOperationForMode(operations, OpCodes.ModeAbsolute);
+                if (operation === null) {
+                    throw "Opcode doesn't support absolute mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
                 compiledLine.processed = true;
                 return compiledLine;
             }
@@ -346,14 +505,78 @@ module Emulator {
             return compiledLine;
         }
 
+        
+        private compileSource(compilerResult: ICompilerResult): ICompilerResult {
+
+            this.consoleService.log("Starting compilation pass 2.");
+
+            var idx: number;
+
+            for (idx = 0; idx < compilerResult.compiledLines.length; idx ++) {
+                var compiledLine = compilerResult.compiledLines[idx];
+                if (!compiledLine.processed) {
+                    var labelInstance: ILabel = this.findLabel(compiledLine.label, compilerResult.labels);
+                    if (labelInstance === null) {
+                        throw "Label not defined: " + compiledLine.label;
+                    }                        
+                    if (compiledLine.code.length === 2) {
+                        var value: number = compiledLine.high ? (labelInstance.address >> Constants.Memory.BitsInByte) : 
+                            labelInstance.address;
+                        compiledLine.code[1] = value & Constants.Memory.ByteMask;
+                        compiledLine.processed = true;
+                        continue;
+                    }
+                    else if (compiledLine.code.length === 3) {
+                        compiledLine.code[1] = labelInstance.address & Constants.Memory.ByteMask;
+                        compiledLine.code[2] = (labelInstance.address >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask;
+                        compiledLine.processed = true;
+                        continue;
+                    }
+                    throw "Not implemented";
+                }
+            }
+
+            return compilerResult;
+        }
+
         private labelExists(label: string, labels: ILabel[]): bool {
+            return this.findLabel(label, labels) !== null;
+        }
+        
+        private findLabel(label: string, labels: ILabel[]): ILabel {
             var index: number; 
             for (index = 0; index < labels.length; index++) {
                 if (labels[index].labelName === label) {
-                    return true;
+                    return labels[index];
                 }
             }
-            return false;
-        }     
+            return null;
+        }    
+        
+        private parseAbsoluteLabel(
+            parameter: string, 
+            compiledLine: ICompiledLine, 
+            labels: ILabel[], 
+            targetExpr: RegExp, 
+            labelExpr: RegExp): string {
+            var matchArray: string[];
+            
+            if (!parameter.match(targetExpr)) {
+                if (matchArray = parameter.match(labelExpr)) {
+                    var label: string = matchArray[1];
+                    var labelInstance: ILabel = this.findLabel(label, labels);
+                    if (labelInstance !== null) {
+                        var value: number = labelInstance.address;
+                        parameter = parameter.replace(matchArray[1], value.toString(10));
+                    }
+                    else {
+                        compiledLine.label = label;
+                        compiledLine.processed = false;
+                        parameter = parameter.replace(matchArray[1], "0");
+                    }
+                }
+            }
+            return parameter;
+        }
     }
 }

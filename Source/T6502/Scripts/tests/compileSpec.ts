@@ -285,6 +285,7 @@ module Tests {
         describe("given compiler when immediate mode is specified", () => {
             
             var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.LoadAccumulatorImmediate();            
 
             beforeEach(() => {
                 result = compiler.compile(
@@ -294,12 +295,83 @@ module Tests {
             
             it("then should handle a hex value", () => {
                 expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
                 expect(cpu.peek(cpu.rPC + 1)).toBe(0x0A);
             });
 
             it("then should handle the decimal value", () => {
                 expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
                 expect(cpu.peek(cpu.rPC + 3)).toBe(22);
+            });
+        });
+
+        describe("given compiler when immediate mode is specified", () => {
+            
+            describe("when high byte is specified", () => {
+                
+                var result: boolean;
+                var opCode: Emulator.IOperation = new Emulator.LoadAccumulatorImmediate();            
+
+                beforeEach(() => {
+                    result = compiler.compile("LABEL: LDA #>LABEL");
+                });
+            
+                it("then should handle the high value of the label", () => {
+                    expect(result).toBe(true);
+                    expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                    expect(cpu.peek(cpu.rPC + 1)).toBe((cpu.rPC >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+                });
+
+            });
+
+            describe("when low byte is specified", () => {
+                
+                var result: boolean;
+                var opCode: Emulator.IOperation = new Emulator.LoadAccumulatorImmediate();            
+
+                beforeEach(() => {
+                    result = compiler.compile("LABEL: LDA #<LABEL");
+                });
+            
+                it("then should handle the low value of the label", () => {
+                    expect(result).toBe(true);
+                    expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                    expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC & Constants.Memory.ByteMask);
+                });
+
+            });
+
+            describe("when label isn't defined yet", () => {
+                
+                var result: boolean;
+                var opCode: Emulator.IOperation = new Emulator.LoadAccumulatorImmediate();            
+
+                beforeEach(() => {
+                    result = compiler.compile("LDA #<LABEL\nLABEL:");
+                });
+            
+                it("then should handle the low value of the label", () => {
+                    expect(result).toBe(true);
+                    expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                    expect(cpu.peek(cpu.rPC + 1)).toBe((cpu.rPC + opCode.sizeBytes) & Constants.Memory.ByteMask);
+                });
+
+            });
+
+            describe("when label is never defined", () => {
+                
+                var result: boolean;
+                var opCode: Emulator.IOperation = new Emulator.LoadAccumulatorImmediate();            
+
+                beforeEach(() => {
+                    result = compiler.compile("LDA #<NOLABEL");
+                });
+            
+                it("then should not compile", () => {
+                    expect(result).toBe(false);                    
+                });
+
             });
         });
 
@@ -308,7 +380,159 @@ module Tests {
             var result: boolean;
 
             beforeEach(() => {
-                result = compiler.compile("LDA #$0AB");
+                result = compiler.compile("LDA #$AAB");
+            });
+            
+            it("then should not compile", () => {
+                expect(result).toBe(false);                
+            });            
+        });
+
+        describe("given compiler when absolute mode is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.IncAbsolute();
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "INC $c000   \n" +
+                    "INC 49152   ; this is a comment");
+            });
+            
+            it("then should handle a hex value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+
+            it("then should handle the decimal value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+        });
+
+        describe("given compiler when immediate mode is specified with invalid value", () => {
+            
+            var result: boolean;
+
+            beforeEach(() => {
+                result = compiler.compile("LDA $C0000");
+            });
+            
+            it("then should not compile", () => {
+                expect(result).toBe(false);                
+            });            
+        });
+
+        describe("given compiler when absolute mode with X index is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.IncAbsoluteX();
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "INC $c000, X   \n" +
+                    "INC 49152, X   ; this is a comment");
+            });
+            
+            it("then should handle a hex value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+
+            it("then should handle the decimal value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+        });
+
+        describe("given compiler when absolute mode with X index using label is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.IncAbsoluteX();
+
+            beforeEach(() => {
+                result = compiler.compile("LABEL: INC LABEL, X");
+            });
+            
+            it("then should handle the label", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC & Constants.Memory.ByteMask);
+                expect(cpu.peek(cpu.rPC + 2)).toBe((cpu.rPC >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            });            
+        });
+
+        describe("given compiler when absolute mode with X index using future label is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.IncAbsoluteX();
+
+            beforeEach(() => {
+                result = compiler.compile("INC LABEL, X\nLABEL:");
+            });
+            
+            it("then should handle the label", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC + opCode.sizeBytes & Constants.Memory.ByteMask);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(((cpu.rPC + opCode.sizeBytes) >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            });            
+        });
+
+
+        describe("given compiler when absolute mode with X index is specified with invalid value", () => {
+            
+            var result: boolean;
+
+            beforeEach(() => {
+                result = compiler.compile("INC $C0000, X");
+            });
+            
+            it("then should not compile", () => {
+                expect(result).toBe(false);                
+            });            
+        });
+
+        describe("given compiler when absolute mode with Y index is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.StoreAccumulatorAbsoluteY();
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "STA $c000, Y   \n" +
+                    "STA 49152,Y   ; this is a comment");
+            });
+            
+            it("then should handle a hex value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+
+            it("then should handle the decimal value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+        });
+
+        describe("given compiler when absolute mode with Y index is specified with invalid value", () => {
+            
+            var result: boolean;
+
+            beforeEach(() => {
+                result = compiler.compile("STA $C0000, Y");
             });
             
             it("then should not compile", () => {

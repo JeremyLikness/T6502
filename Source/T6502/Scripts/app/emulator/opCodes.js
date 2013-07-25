@@ -401,6 +401,27 @@ var Emulator;
 
     registeredOperations.push(StoreAccumulatorAbsolute);
 
+    var StoreAccumulatorAbsoluteY = (function () {
+        function StoreAccumulatorAbsoluteY() {
+            this.opName = "STA";
+            this.sizeBytes = 0x03;
+            this.addressingMode = OpCodes.ModeAbsoluteY;
+            this.opCode = 0x99;
+        }
+        StoreAccumulatorAbsoluteY.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", Y");
+        };
+
+        StoreAccumulatorAbsoluteY.prototype.execute = function (cpu) {
+            var targetAddress = cpu.addrPopWord() + cpu.rY;
+            cpu.poke(targetAddress, cpu.rA);
+        };
+        return StoreAccumulatorAbsoluteY;
+    })();
+    Emulator.StoreAccumulatorAbsoluteY = StoreAccumulatorAbsoluteY;
+
+    registeredOperations.push(StoreAccumulatorAbsoluteY);
+
     var StoreAccumulatorIndirectY = (function () {
         function StoreAccumulatorIndirectY() {
             this.opName = "STA";

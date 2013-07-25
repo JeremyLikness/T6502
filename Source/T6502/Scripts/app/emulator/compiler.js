@@ -10,11 +10,16 @@ var Emulator;
             this.memoryLabelHex = /^(\$[0-9A-F]+):.*/;
             this.memoryLabelDec = /^([0-9]+):.*/;
             this.regularLabel = /^(\w+):.*/;
-            this.memorySet = /^\*[\s]*=[\s]*[\$]?[0-9a-f]*$/;
+            this.memorySet = /^\*\s*\=\s*[\$]?[0-9A-F]*$/;
             this.setAddress = /^[\s]*\*[\s]*=[\s]*/;
-            this.removeHex = /^\$/;
-            this.immediateHex = /^\#\$([0-9A-F]{1,2})\s*/;
-            this.immediateDec = /^\#(\d{1,3})\s*/;
+            this.immediate = /^\#\$?([0-9A-F]{1,3})\s*/;
+            this.immediateLabel = /^\#([<>])(\w+)\s*/;
+            this.absoluteX = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/;
+            this.absoluteXLabel = /^(\w+)(\,\s*X)\s*/;
+            this.absoluteY = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/;
+            this.absoluteYLabel = /^(\w+)(\,\s*Y)\s*/;
+            this.absolute = /^\$?([0-9A-F]{1,5})\s*/;
+            this.absoluteLabel = /^(\w+)\s*/;
             this.cpu = cpu;
             this.consoleService = consoleService;
             this.opCodeCache = {};
@@ -51,8 +56,11 @@ var Emulator;
 
             try  {
                 var compiled = this.parseLabels(lines);
+
                 compiled = this.compileSource(compiled);
+
                 this.consoleService.log("Compilation complete.");
+
                 var idx;
                 var offset;
                 for (idx = 0; idx < compiled.compiledLines.length; idx++) {
@@ -112,8 +120,14 @@ var Emulator;
 
                     input = input.replace(label + ":", "");
 
-                    label = label.replace(this.removeHex, "");
+                    label = label.replace("$", "");
                     address = parseInt(label, hex ? 16 : 10);
+
+                    if (address < 0 || address > Constants.Memory.Max) {
+                        throw "Address out of range: " + label;
+                    }
+
+                    this.pcAddress = address;
                 } else {
                     if (input.match(this.regularLabel)) {
                         label = this.regularLabel.exec(input)[1];
@@ -152,7 +166,8 @@ var Emulator;
                 address: address,
                 code: [],
                 processed: false,
-                label: ""
+                label: "",
+                high: false
             };
 
             if (input.match(this.opCode)) {
@@ -162,21 +177,6 @@ var Emulator;
             }
 
             return result;
-        };
-
-        Compiler.prototype.compileSource = function (compilerResult) {
-            this.consoleService.log("Starting compilation pass 2.");
-
-            var idx;
-
-            for (idx = 0; idx < compilerResult.compiledLines.length; idx++) {
-                var compiledLine = compilerResult.compiledLines[idx];
-                if (!compiledLine.processed) {
-                    throw "Not implemented";
-                }
-            }
-
-            return compilerResult;
         };
 
         Compiler.prototype.trimLine = function (input) {
@@ -200,7 +200,7 @@ var Emulator;
             if (input.match(this.memorySet)) {
                 parameter = input.replace(this.setAddress, "");
                 if (parameter[0] === "$") {
-                    parameter = parameter.replace(this.removeHex, "");
+                    parameter = parameter.replace("$", "");
                     address = parseInt(parameter, 16);
                 } else {
                     address = parseInt(parameter, 10);
@@ -227,10 +227,21 @@ var Emulator;
 
         Compiler.prototype.parseOpCode = function (labels, opCodeExpression, compiledLine) {
             var matches = this.opCode.exec(opCodeExpression);
+            var matchArray;
             var idx;
-
+            var hex;
+            var rawValue;
+            var value;
+            var xIndex;
+            var yIndex;
+            var operation;
             var opCodeName = matches[1];
             var operations = [];
+            var parameter;
+            var labelReady;
+            var label;
+            var labelInstance;
+            var processed;
 
             if (opCodeName in this.opCodeCache) {
                 operations = this.opCodeCache[opCodeName];
@@ -243,22 +254,40 @@ var Emulator;
                 }
             }
 
-            var parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
+            processed = true;
+
+            parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
 
             if (!parameter.match(this.notWhitespace)) {
-                var operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeSingle);
+                operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeSingle);
                 if (operation === null) {
                     throw "Opcode requires a parameter " + opCodeName;
                 }
                 compiledLine.code.push(operation.opCode);
-                compiledLine.processed = true;
+                compiledLine.processed = processed;
                 return compiledLine;
             }
 
-            if (parameter.match(this.immediateHex) || parameter.match(this.immediateDec)) {
-                var hex = parameter[1] === "$";
-                var rawValue = parameter.match(hex ? this.immediateHex : this.immediateDec)[1];
-                var value = parseInt(rawValue, hex ? 16 : 10);
+            if (!parameter.match(this.immediate)) {
+                if (matchArray = parameter.match(this.immediateLabel)) {
+                    compiledLine.high = matchArray[1] === ">";
+                    label = matchArray[2];
+                    labelInstance = this.findLabel(label, labels);
+                    if (labelInstance !== null) {
+                        value = compiledLine.high ? (labelInstance.address >> Constants.Memory.BitsInByte) : labelInstance.address;
+                        parameter = parameter.replace(matchArray[0], "#" + (value & Constants.Memory.ByteMask).toString(10));
+                    } else {
+                        compiledLine.label = label;
+                        processed = false;
+                        parameter = parameter.replace(matchArray[0], "#0");
+                    }
+                }
+            }
+
+            if (matchArray = parameter.match(this.immediate)) {
+                hex = parameter[1] === "$";
+                rawValue = matchArray[1];
+                value = parseInt(rawValue, hex ? 16 : 10);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Immediate value of out range: " + value;
                 }
@@ -269,13 +298,115 @@ var Emulator;
                     throw "Invalid assembly: " + opCodeExpression;
                 }
 
-                var operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeImmediate);
+                operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeImmediate);
                 if (operation === null) {
                     throw "Opcode doesn't support immediate mode " + opCodeName;
                 }
 
                 compiledLine.code.push(operation.opCode);
                 compiledLine.code.push(value);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteX, this.absoluteXLabel);
+            processed = compiledLine.processed;
+
+            if (matchArray = parameter.match(this.absoluteX)) {
+                hex = parameter[0] === "$";
+                rawValue = matchArray[1];
+                xIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute X-Indexed value of out range: " + value;
+                }
+
+                if (hex) {
+                    parameter = parameter.replace("$", "");
+                }
+
+                parameter = parameter.replace(xIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeAbsoluteX);
+                if (operation === null) {
+                    throw "Opcode doesn't support absolute X-indexed mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteY, this.absoluteYLabel);
+            processed = compiledLine.processed;
+
+            if (matchArray = parameter.match(this.absoluteY)) {
+                hex = parameter[0] === "$";
+                rawValue = matchArray[1];
+                yIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute Y-Indexed value of out range: " + value;
+                }
+
+                if (hex) {
+                    parameter = parameter.replace("$", "");
+                }
+
+                parameter = parameter.replace(yIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeAbsoluteY);
+                if (operation === null) {
+                    throw "Opcode doesn't support absolute Y-indexed mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+                compiledLine.processed = true;
+                return compiledLine;
+            }
+
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+            processed = compiledLine.processed;
+
+            if (matchArray = parameter.match(this.absolute)) {
+                hex = parameter[0] === "$";
+                rawValue = matchArray[1];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute value of out range: " + value;
+                }
+
+                if (hex) {
+                    parameter = parameter.replace("$", "");
+                }
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeAbsolute);
+                if (operation === null) {
+                    throw "Opcode doesn't support absolute mode " + opCodeName;
+                }
+
+                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
                 compiledLine.processed = true;
                 return compiledLine;
             }
@@ -283,14 +414,68 @@ var Emulator;
             return compiledLine;
         };
 
+        Compiler.prototype.compileSource = function (compilerResult) {
+            this.consoleService.log("Starting compilation pass 2.");
+
+            var idx;
+
+            for (idx = 0; idx < compilerResult.compiledLines.length; idx++) {
+                var compiledLine = compilerResult.compiledLines[idx];
+                if (!compiledLine.processed) {
+                    var labelInstance = this.findLabel(compiledLine.label, compilerResult.labels);
+                    if (labelInstance === null) {
+                        throw "Label not defined: " + compiledLine.label;
+                    }
+                    if (compiledLine.code.length === 2) {
+                        var value = compiledLine.high ? (labelInstance.address >> Constants.Memory.BitsInByte) : labelInstance.address;
+                        compiledLine.code[1] = value & Constants.Memory.ByteMask;
+                        compiledLine.processed = true;
+                        continue;
+                    } else if (compiledLine.code.length === 3) {
+                        compiledLine.code[1] = labelInstance.address & Constants.Memory.ByteMask;
+                        compiledLine.code[2] = (labelInstance.address >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask;
+                        compiledLine.processed = true;
+                        continue;
+                    }
+                    throw "Not implemented";
+                }
+            }
+
+            return compilerResult;
+        };
+
         Compiler.prototype.labelExists = function (label, labels) {
+            return this.findLabel(label, labels) !== null;
+        };
+
+        Compiler.prototype.findLabel = function (label, labels) {
             var index;
             for (index = 0; index < labels.length; index++) {
                 if (labels[index].labelName === label) {
-                    return true;
+                    return labels[index];
                 }
             }
-            return false;
+            return null;
+        };
+
+        Compiler.prototype.parseAbsoluteLabel = function (parameter, compiledLine, labels, targetExpr, labelExpr) {
+            var matchArray;
+
+            if (!parameter.match(targetExpr)) {
+                if (matchArray = parameter.match(labelExpr)) {
+                    var label = matchArray[1];
+                    var labelInstance = this.findLabel(label, labels);
+                    if (labelInstance !== null) {
+                        var value = labelInstance.address;
+                        parameter = parameter.replace(matchArray[1], value.toString(10));
+                    } else {
+                        compiledLine.label = label;
+                        compiledLine.processed = false;
+                        parameter = parameter.replace(matchArray[1], "0");
+                    }
+                }
+            }
+            return parameter;
         };
         return Compiler;
     })();
