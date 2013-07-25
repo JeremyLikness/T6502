@@ -421,6 +421,27 @@ module Emulator {
 
     registeredOperations.push(StoreAccumulatorAbsolute);
 
+    export class StoreAccumulatorAbsoluteY implements IOperation {
+
+        public opName: string = "STA";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", Y");
+        }        
+
+        public addressingMode: number = OpCodes.ModeAbsoluteY;
+        public opCode: number = 0x99; 
+        public execute(cpu: Emulator.ICpu) {
+            var targetAddress: number = cpu.addrPopWord() + cpu.rY;
+            cpu.poke(targetAddress, cpu.rA);
+        }
+    }
+
+    registeredOperations.push(StoreAccumulatorAbsoluteY);
+
     export class StoreAccumulatorIndirectY implements IOperation {
 
         public opName: string = "STA";
