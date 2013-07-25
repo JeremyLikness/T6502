@@ -130,6 +130,74 @@ module Emulator {
 
     registeredOperations.push(CompareXImmediate);
 
+    export class CompareYImmediate implements IOperation {
+
+        public opName: string = "CPY";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "#$" + OpCodes.ToByte(bytes[1]));
+        }
+
+        public addressingMode: number = OpCodes.ModeImmediate;
+        public opCode: number = 0xC0;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.compareWithFlags(cpu.rY, cpu.addrPop());
+        }
+    }
+
+    registeredOperations.push(CompareYImmediate);
+
+    export class DecXSingle implements IOperation {
+        
+        public opName: string = "DEX";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0xCA;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rX -= 1;
+            if (cpu.rX < 0) {
+                cpu.rX = Constants.Memory.ByteMask;
+            }
+            cpu.setFlags(cpu.rX);
+        }
+    }
+
+    registeredOperations.push(DecXSingle);
+
+    export class DecYSingle implements IOperation {
+        
+        public opName: string = "DEY";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0x88;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rY -= 1;
+            if (cpu.rY < 0) {
+                cpu.rY = Constants.Memory.ByteMask;
+            }
+            cpu.setFlags(cpu.rY);
+        }
+    }
+
+    registeredOperations.push(DecYSingle);
+
     export class ExclusiveOrIndirectX implements IOperation {
         
         public opName: string = "EOR";
@@ -226,6 +294,48 @@ module Emulator {
     }
 
     registeredOperations.push(IncAbsoluteX);
+
+    export class IncXSingle implements IOperation {
+        
+        public opName: string = "INX";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0xe8;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rX = ((cpu.rX) + 1) & Constants.Memory.ByteMask;
+            cpu.setFlags(cpu.rX);
+        }
+    }
+
+    registeredOperations.push(IncXSingle);
+
+    export class IncYSingle implements IOperation {
+        
+        public opName: string = "INY";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0xC8;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rY = ((cpu.rY) + 1) & Constants.Memory.ByteMask;
+            cpu.setFlags(cpu.rY);
+        }
+    }
+
+    registeredOperations.push(IncYSingle);
 
     export class IncZeroPage implements IOperation {
         
@@ -485,4 +595,88 @@ module Emulator {
     }
 
     registeredOperations.push(StoreAccumulatorZeroPage);
+
+    export class TransferAccumulatorToXSingle implements IOperation {
+
+        public opName: string = "TAX";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }        
+
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0xAA; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rX = cpu.rA;
+            cpu.setFlags(cpu.rX);
+        }
+    }
+
+    registeredOperations.push(TransferAccumulatorToXSingle);
+
+    export class TransferAccumulatorToYSingle implements IOperation {
+
+        public opName: string = "TAY";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }        
+
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0xA8; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rY = cpu.rA;
+            cpu.setFlags(cpu.rY);
+        }
+    }
+
+    registeredOperations.push(TransferAccumulatorToYSingle);
+
+    export class TransferXToAccumulatorSingle implements IOperation {
+
+        public opName: string = "TXA";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }        
+
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0x8A; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.rX;
+            cpu.setFlags(cpu.rA);
+        }
+    }
+
+    registeredOperations.push(TransferXToAccumulatorSingle);
+
+    export class TransferYToAccumulatorSingle implements IOperation {
+
+        public opName: string = "TYA";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }        
+
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0x98; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.rY;
+            cpu.setFlags(cpu.rA);
+        }
+    }
+
+    registeredOperations.push(TransferYToAccumulatorSingle);
 }

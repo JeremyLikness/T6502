@@ -118,6 +118,74 @@ var Emulator;
 
     registeredOperations.push(CompareXImmediate);
 
+    var CompareYImmediate = (function () {
+        function CompareYImmediate() {
+            this.opName = "CPY";
+            this.sizeBytes = 0x02;
+            this.addressingMode = OpCodes.ModeImmediate;
+            this.opCode = 0xC0;
+        }
+        CompareYImmediate.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        };
+
+        CompareYImmediate.prototype.execute = function (cpu) {
+            cpu.compareWithFlags(cpu.rY, cpu.addrPop());
+        };
+        return CompareYImmediate;
+    })();
+    Emulator.CompareYImmediate = CompareYImmediate;
+
+    registeredOperations.push(CompareYImmediate);
+
+    var DecXSingle = (function () {
+        function DecXSingle() {
+            this.opName = "DEX";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0xCA;
+        }
+        DecXSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        DecXSingle.prototype.execute = function (cpu) {
+            cpu.rX -= 1;
+            if (cpu.rX < 0) {
+                cpu.rX = Constants.Memory.ByteMask;
+            }
+            cpu.setFlags(cpu.rX);
+        };
+        return DecXSingle;
+    })();
+    Emulator.DecXSingle = DecXSingle;
+
+    registeredOperations.push(DecXSingle);
+
+    var DecYSingle = (function () {
+        function DecYSingle() {
+            this.opName = "DEY";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0x88;
+        }
+        DecYSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        DecYSingle.prototype.execute = function (cpu) {
+            cpu.rY -= 1;
+            if (cpu.rY < 0) {
+                cpu.rY = Constants.Memory.ByteMask;
+            }
+            cpu.setFlags(cpu.rY);
+        };
+        return DecYSingle;
+    })();
+    Emulator.DecYSingle = DecYSingle;
+
+    registeredOperations.push(DecYSingle);
+
     var ExclusiveOrIndirectX = (function () {
         function ExclusiveOrIndirectX() {
             this.opName = "EOR";
@@ -208,6 +276,48 @@ var Emulator;
     Emulator.IncAbsoluteX = IncAbsoluteX;
 
     registeredOperations.push(IncAbsoluteX);
+
+    var IncXSingle = (function () {
+        function IncXSingle() {
+            this.opName = "INX";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0xe8;
+        }
+        IncXSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        IncXSingle.prototype.execute = function (cpu) {
+            cpu.rX = ((cpu.rX) + 1) & Constants.Memory.ByteMask;
+            cpu.setFlags(cpu.rX);
+        };
+        return IncXSingle;
+    })();
+    Emulator.IncXSingle = IncXSingle;
+
+    registeredOperations.push(IncXSingle);
+
+    var IncYSingle = (function () {
+        function IncYSingle() {
+            this.opName = "INY";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0xC8;
+        }
+        IncYSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        IncYSingle.prototype.execute = function (cpu) {
+            cpu.rY = ((cpu.rY) + 1) & Constants.Memory.ByteMask;
+            cpu.setFlags(cpu.rY);
+        };
+        return IncYSingle;
+    })();
+    Emulator.IncYSingle = IncYSingle;
+
+    registeredOperations.push(IncYSingle);
 
     var IncZeroPage = (function () {
         function IncZeroPage() {
@@ -464,4 +574,88 @@ var Emulator;
     Emulator.StoreAccumulatorZeroPage = StoreAccumulatorZeroPage;
 
     registeredOperations.push(StoreAccumulatorZeroPage);
+
+    var TransferAccumulatorToXSingle = (function () {
+        function TransferAccumulatorToXSingle() {
+            this.opName = "TAX";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0xAA;
+        }
+        TransferAccumulatorToXSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        TransferAccumulatorToXSingle.prototype.execute = function (cpu) {
+            cpu.rX = cpu.rA;
+            cpu.setFlags(cpu.rX);
+        };
+        return TransferAccumulatorToXSingle;
+    })();
+    Emulator.TransferAccumulatorToXSingle = TransferAccumulatorToXSingle;
+
+    registeredOperations.push(TransferAccumulatorToXSingle);
+
+    var TransferAccumulatorToYSingle = (function () {
+        function TransferAccumulatorToYSingle() {
+            this.opName = "TAY";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0xA8;
+        }
+        TransferAccumulatorToYSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        TransferAccumulatorToYSingle.prototype.execute = function (cpu) {
+            cpu.rY = cpu.rA;
+            cpu.setFlags(cpu.rY);
+        };
+        return TransferAccumulatorToYSingle;
+    })();
+    Emulator.TransferAccumulatorToYSingle = TransferAccumulatorToYSingle;
+
+    registeredOperations.push(TransferAccumulatorToYSingle);
+
+    var TransferXToAccumulatorSingle = (function () {
+        function TransferXToAccumulatorSingle() {
+            this.opName = "TXA";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0x8A;
+        }
+        TransferXToAccumulatorSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        TransferXToAccumulatorSingle.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rX;
+            cpu.setFlags(cpu.rA);
+        };
+        return TransferXToAccumulatorSingle;
+    })();
+    Emulator.TransferXToAccumulatorSingle = TransferXToAccumulatorSingle;
+
+    registeredOperations.push(TransferXToAccumulatorSingle);
+
+    var TransferYToAccumulatorSingle = (function () {
+        function TransferYToAccumulatorSingle() {
+            this.opName = "TYA";
+            this.sizeBytes = 0x01;
+            this.addressingMode = OpCodes.ModeSingle;
+            this.opCode = 0x98;
+        }
+        TransferYToAccumulatorSingle.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        };
+
+        TransferYToAccumulatorSingle.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rY;
+            cpu.setFlags(cpu.rA);
+        };
+        return TransferYToAccumulatorSingle;
+    })();
+    Emulator.TransferYToAccumulatorSingle = TransferYToAccumulatorSingle;
+
+    registeredOperations.push(TransferYToAccumulatorSingle);
 })(Emulator || (Emulator = {}));
