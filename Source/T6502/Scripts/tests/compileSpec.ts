@@ -301,7 +301,7 @@ module Tests {
 
             it("then should handle the decimal value", () => {
                 expect(result).toBe(true);
-                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(opCode.opCode);
                 expect(cpu.peek(cpu.rPC + 3)).toBe(22);
             });
         });
@@ -408,9 +408,33 @@ module Tests {
 
             it("then should handle the decimal value", () => {
                 expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 4)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(0xc0);
+            });
+        });
+
+        describe("given compiler when zero page is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.StoreAccumulatorZeroPage();
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "STA $01   \n" +
+                    "STA 254   ");
+            });
+            
+            it("then should handle a hex value", () => {
+                expect(result).toBe(true);
                 expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
-                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
-                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x01);                
+            });
+
+            it("then should handle the decimal value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(254);                
             });
         });
 
@@ -447,9 +471,9 @@ module Tests {
 
             it("then should handle the decimal value", () => {
                 expect(result).toBe(true);
-                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
-                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
-                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 4)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(0xc0);
             });
         });
 
@@ -521,9 +545,9 @@ module Tests {
 
             it("then should handle the decimal value", () => {
                 expect(result).toBe(true);
-                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
-                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
-                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 4)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(0xc0);
             });
         });
 
@@ -537,6 +561,54 @@ module Tests {
             
             it("then should not compile", () => {
                 expect(result).toBe(false);                
+            });            
+        });
+
+        describe("given compiler when branch with address encountered", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.BranchNotEqual();
+
+            beforeEach(() => {
+                result = compiler.compile("$c000: BNE $C000");
+            });
+            
+            it("then should compile to correct branch", () => {
+                expect(result).toBe(true);                
+                expect(cpu.peek(0xC000)).toBe(opCode.opCode);
+                expect(cpu.peek(0xC001)).toBe(0xFE);
+            });            
+        });
+
+        describe("given compiler when branch with label encountered", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.BranchNotEqual();
+
+            beforeEach(() => {
+                result = compiler.compile("LABEL: BNE LABEL");
+            });
+            
+            it("then should compile to correct branch", () => {
+                expect(result).toBe(true);          
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0xFE);      
+            });            
+        });
+
+        describe("given compiler when branch with future label encountered", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.BranchNotEqual();
+
+            beforeEach(() => {
+                result = compiler.compile("BNE LABEL\nLABEL:");
+            });
+            
+            it("then should compile to correct branch", () => {
+                expect(result).toBe(true);  
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);              
             });            
         });
     });

@@ -20,6 +20,7 @@ module Emulator {
     // for resolving immediate mode labels (i.e. #<label and #>label)
     export interface ICompiledLine {
         address: number;
+        operation: IOperation;
         code: number[];
         processed: boolean;
         label: string;
@@ -54,8 +55,8 @@ module Emulator {
         private absoluteXLabel: RegExp = /^(\w+)(\,\s*X)\s*/; // LABEL, X 
         private absoluteY: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/; // $C000, Y 
         private absoluteYLabel: RegExp = /^(\w+)(\,\s*Y)\s*/; // LABEL, Y 
-        private absolute: RegExp = /^\$?([0-9A-F]{1,5})\s*/;  // JMP $C000
-        private absoluteLabel: RegExp = /^(\w+)\s*/; // JMP LABEL
+        private absolute: RegExp = /^\$?([0-9A-F]{1,5})(^\S)*(\s*\;.*)?$/;  // JMP $C000
+        private absoluteLabel: RegExp = /^([A-Z_][A-Z0-9_]+)\s*/; // JMP LABEL
             
         constructor(
             cpu: Emulator.ICpuExtended, 
@@ -229,6 +230,7 @@ module Emulator {
             var result: ICompiledLine = {
                 address: address,
                 code: [],
+                operation: null,
                 processed: false,
                 label: "",
                 high: false
@@ -306,7 +308,6 @@ module Emulator {
             var value: number;
             var xIndex: string;
             var yIndex: string;
-            var operation: IOperation;
             var opCodeName: string = matches[1];
             var operations: IOperation[] = [];
             var parameter: string;
@@ -332,13 +333,61 @@ module Emulator {
 
             parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
 
+            // branches 
+            if (operations[0].addressingMode === OpCodes.ModeRelative) {
+            
+                // absolute with label 
+                compiledLine.processed = true;
+                parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+                processed = compiledLine.processed;
+
+                // absolute mode 
+                if (matchArray = parameter.match(this.absolute)) {
+                    hex = parameter[0] === "$"; 
+                    rawValue = matchArray[1];
+                    value = parseInt(rawValue, hex ? 16 : 10);
+                    if (value < 0 || value > Constants.Memory.Size) {
+                        throw "Absolute value of out range: " + value;
+                    }
+
+                    // strip the value to find what's remaining
+                    if (hex) { 
+                        parameter = parameter.replace("$", "");
+                    }
+                    parameter = this.trimLine(parameter.replace(rawValue, ""));
+                    if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                        throw "Invalid assembly: " + opCodeExpression;
+                    }
+
+                    compiledLine.operation = operations[0];
+
+                    compiledLine.code.push(compiledLine.operation.opCode);
+
+                    var offset: number;
+
+                    if (value <= compiledLine.address) {
+                        offset = Constants.Memory.ByteMask - ((compiledLine.address + 1) - value); 
+                    }
+                    else {
+                        offset = (value - compiledLine.address) - 2;
+                    }
+
+                    compiledLine.code.push(offset & Constants.Memory.ByteMask);
+                    compiledLine.processed = processed;
+                    return compiledLine;
+                }
+                else {
+                    throw "Invalid branch.";
+                } 
+            }
+
             // single only 
             if (!parameter.match(this.notWhitespace)) {
-                operation = this.getOperationForMode(operations, OpCodes.ModeSingle);
-                if (operation === null) {
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeSingle);
+                if (compiledLine.operation === null) {
                     throw "Opcode requires a parameter " + opCodeName;
                 }
-                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(compiledLine.operation.opCode);
                 compiledLine.processed = processed;
                 return compiledLine;
             }
@@ -379,12 +428,12 @@ module Emulator {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
-                operation = this.getOperationForMode(operations, OpCodes.ModeImmediate);
-                if (operation === null) {
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeImmediate);
+                if (compiledLine.operation === null) {
                     throw "Opcode doesn't support immediate mode " + opCodeName;
                 }
 
-                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(compiledLine.operation.opCode);
                 compiledLine.code.push(value);
                 compiledLine.processed = processed;
                 return compiledLine;
@@ -416,12 +465,12 @@ module Emulator {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
-                operation = this.getOperationForMode(operations, OpCodes.ModeAbsoluteX);
-                if (operation === null) {
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeAbsoluteX);
+                if (compiledLine.operation === null) {
                     throw "Opcode doesn't support absolute X-indexed mode " + opCodeName;
                 }
 
-                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(compiledLine.operation.opCode);
                 compiledLine.code.push(value & Constants.Memory.ByteMask);
                 compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
                 compiledLine.processed = processed;
@@ -455,12 +504,12 @@ module Emulator {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
-                operation = this.getOperationForMode(operations, OpCodes.ModeAbsoluteY);
-                if (operation === null) {
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeAbsoluteY);
+                if (compiledLine.operation === null) {
                     throw "Opcode doesn't support absolute Y-indexed mode " + opCodeName;
                 }
 
-                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(compiledLine.operation.opCode);
                 compiledLine.code.push(value & Constants.Memory.ByteMask);
                 compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
                 compiledLine.processed = true;
@@ -489,20 +538,25 @@ module Emulator {
                 if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
+
+                var mode: number = value <= Constants.Memory.ByteMask ? OpCodes.ModeZeroPage : OpCodes.ModeAbsolute;
                 
-                operation = this.getOperationForMode(operations, OpCodes.ModeAbsolute);
-                if (operation === null) {
+                compiledLine.operation = this.getOperationForMode(operations, mode);
+                if (compiledLine.operation === null) {
                     throw "Opcode doesn't support absolute mode " + opCodeName;
                 }
 
-                compiledLine.code.push(operation.opCode);
+                compiledLine.code.push(compiledLine.operation.opCode);
                 compiledLine.code.push(value & Constants.Memory.ByteMask);
-                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
+                
+                if (mode === OpCodes.ModeAbsolute) {
+                    compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
+                }
                 compiledLine.processed = true;
                 return compiledLine;
             }
 
-            return compiledLine;
+            throw "Unable to parse " + opCodeExpression;
         }
 
         
@@ -519,14 +573,28 @@ module Emulator {
                     if (labelInstance === null) {
                         throw "Label not defined: " + compiledLine.label;
                     }                        
-                    if (compiledLine.code.length === 2) {
-                        var value: number = compiledLine.high ? (labelInstance.address >> Constants.Memory.BitsInByte) : 
-                            labelInstance.address;
-                        compiledLine.code[1] = value & Constants.Memory.ByteMask;
+                    if (compiledLine.operation.sizeBytes === 2) {
+
+                        if (compiledLine.operation.addressingMode === OpCodes.ModeRelative) {
+                            var offset: number;
+
+                            if (labelInstance.address <= compiledLine.address) {
+                                offset = Constants.Memory.ByteMask - ((compiledLine.address + 1) - labelInstance.address); 
+                            }
+                            else {
+                                offset = (labelInstance.address - compiledLine.address) - 2;
+                            }
+                            compiledLine.code[1] = offset & Constants.Memory.ByteMask;
+                        }
+                        else { 
+                            var value: number = compiledLine.high ? (labelInstance.address >> Constants.Memory.BitsInByte) : 
+                                labelInstance.address;
+                            compiledLine.code[1] = value & Constants.Memory.ByteMask;
+                        }
                         compiledLine.processed = true;
                         continue;
                     }
-                    else if (compiledLine.code.length === 3) {
+                    else if (compiledLine.operation.sizeBytes === 3) {
                         compiledLine.code[1] = labelInstance.address & Constants.Memory.ByteMask;
                         compiledLine.code[2] = (labelInstance.address >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask;
                         compiledLine.processed = true;
@@ -572,7 +640,7 @@ module Emulator {
                     else {
                         compiledLine.label = label;
                         compiledLine.processed = false;
-                        parameter = parameter.replace(matchArray[1], "0");
+                        parameter = parameter.replace(matchArray[1], "65535");
                     }
                 }
             }
