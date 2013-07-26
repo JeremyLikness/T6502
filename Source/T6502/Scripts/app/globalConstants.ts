@@ -32,10 +32,14 @@ module Constants {
 
     export class ProcessorStatus {
         public static CarryFlagSet: number = 0x01; 
-        public static CarryFlagReset: number = 0xFE; 
+        public static CarryFlagReset: number = Memory.ByteMask - ProcessorStatus.CarryFlagSet;
         public static ZeroFlagSet: number = 0x02;
-        public static ZeroFlagReset: number = 0xFD; 
+        public static ZeroFlagReset: number = Memory.ByteMask - ProcessorStatus.ZeroFlagSet; 
+        public static DecimalFlagSet: number = 0x08;
+        public static DecimalFlagReset: number = Memory.ByteMask - ProcessorStatus.DecimalFlagSet;
+        public static OverflowFlagSet: number = 0x40; 
+        public static OverflowFlagReset: number = Memory.ByteMask - ProcessorStatus.OverflowFlagSet;
         public static NegativeFlagSet: number = 0x80;
-        public static NegativeFlagReset: number = 0x7F;
+        public static NegativeFlagReset: number = Memory.ByteMask - ProcessorStatus.NegativeFlagSet;
     }
 }

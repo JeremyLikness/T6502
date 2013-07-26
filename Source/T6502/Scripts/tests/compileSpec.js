@@ -545,5 +545,102 @@
                 expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
             });
         });
+
+        describe("given compiler when indexed indirect x encountered", function () {
+            var result;
+            var opCode = new Emulator.ExclusiveOrIndirectX();
+
+            beforeEach(function () {
+                result = compiler.compile("EOR ($44,X)");
+            });
+
+            it("then should compile to correct code", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x44);
+            });
+        });
+
+        describe("given compiler when indirect indexed y encountered", function () {
+            var result;
+            var opCode = new Emulator.StoreAccumulatorIndirectY();
+
+            beforeEach(function () {
+                result = compiler.compile("STA ($44),Y");
+            });
+
+            it("then should compile to correct code", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x44);
+            });
+        });
+
+        describe("given compiler when indirect mode is specified", function () {
+            var result;
+            var opCode = new Emulator.JmpIndirect();
+
+            beforeEach(function () {
+                result = compiler.compile("JMP ($c000)   \n" + "JMP (49152)   ; this is a comment");
+            });
+
+            it("then should handle a hex value", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+
+            it("then should handle the decimal value", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 4)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(0xc0);
+            });
+        });
+
+        describe("given compiler when indirect mode using label is specified", function () {
+            var result;
+            var opCode = new Emulator.JmpIndirect();
+
+            beforeEach(function () {
+                result = compiler.compile("LABEL: JMP (LABEL)");
+            });
+
+            it("then should handle the label", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC & Constants.Memory.ByteMask);
+                expect(cpu.peek(cpu.rPC + 2)).toBe((cpu.rPC >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            });
+        });
+
+        describe("given compiler when indirect mode using future label is specified", function () {
+            var result;
+            var opCode = new Emulator.JmpIndirect();
+
+            beforeEach(function () {
+                result = compiler.compile("JMP (LABEL)\nLABEL:");
+            });
+
+            it("then should handle the label", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC + opCode.sizeBytes & Constants.Memory.ByteMask);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(((cpu.rPC + opCode.sizeBytes) >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            });
+        });
+
+        describe("given compiler when indirect mode is specified with invalid value", function () {
+            var result;
+
+            beforeEach(function () {
+                result = compiler.compile("JMP ($C0000)");
+            });
+
+            it("then should not compile", function () {
+                expect(result).toBe(false);
+            });
+        });
     });
 })(Tests || (Tests = {}));

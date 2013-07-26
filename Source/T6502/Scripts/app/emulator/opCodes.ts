@@ -4,7 +4,7 @@
 module Emulator {
 
     export interface IOperation {
-        execute(cpu: ICpu);
+        execute(cpu: Emulator.ICpu);
         addressingMode: number;
         opCode: number;
         opName: string;
@@ -71,7 +71,7 @@ module Emulator {
         public static ToDecompiledLine(address: string, opCode: string, parm: string) {
             return "$" + address + ": " + opCode + " " + parm;
         }
-
+       
         public static FillOps(operationMap: IOperation[]): void {
             var idx: number;
             var size: number = Constants.Memory.ByteMask + 1;
@@ -84,8 +84,74 @@ module Emulator {
                 var operation = new registeredOperations[idx]();
                 operationMap[operation.opCode] = operation;
             }
+        }    
+        
+        public static AddWithCarry(cpu: Emulator.ICpu, src: number) {
+            var temp: number = src + cpu.rA + (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0);
+            if (cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)) {
+                if (((cpu.rA & 0xF) + (src & 0xF) + (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0)) > 9) {
+                    temp += 6;                    
+                }
+                var overFlow: boolean = !(((cpu.rA ^ src) & 0x80) > 0) && ((cpu.rA ^ temp) & 0x80) > 0;
+                cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, overFlow);
+                if (temp > 0x99) {
+                    temp += 96;
+                }    
+                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp > 0x99));
+            }
+            else {
+                var overFlow: boolean = !(((cpu.rA ^ src) & 0x80) > 0) && ((cpu.rA ^ temp) & 0x80) > 0;
+                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp > Constants.Memory.ByteMask));
+            }
+            cpu.rA = temp & Constants.Memory.ByteMask; 
+            cpu.setFlags(cpu.rA);
+        }
+     }   
+
+    // http://vic-20.appspot.com/docs/6502.txt
+    // Carry = 0 or 1
+    // ADC:  .A = .A + mem + Carry
+    // SBC:  .A = .A + (mem XOR 255) + Carry   ; 2's complement is fun!
+    
+    export class AddWithCarryImmediate implements IOperation {
+        public opName: string = "ADC";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "#$" + OpCodes.ToByte(bytes[1]));
+        }
+        
+        addressingMode: number = OpCodes.ModeImmediate;
+        public opCode: number = 0x69; 
+        public execute(cpu: Emulator.ICpu) {
+            OpCodes.AddWithCarry(cpu, cpu.addrPop());
         }
     }
+    
+    registeredOperations.push(AddWithCarryImmediate);
+
+    export class AndImmediate implements IOperation {
+        
+        public opName: string = "AND";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "#$" + OpCodes.ToByte(bytes[1]));
+        }
+        
+        addressingMode: number = OpCodes.ModeImmediate;
+        public opCode: number = 0x29; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.rA & cpu.addrPop();
+            cpu.setFlags(cpu.rA);
+        }
+    }
+    
+    registeredOperations.push(AndImmediate);
 
     export class BranchNotEqual implements IOperation {
         
@@ -382,6 +448,27 @@ module Emulator {
 
     registeredOperations.push(IncrementX);
 
+    export class JmpIndirect implements IOperation {
+        
+        public opName:string = "JMP";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "($" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ")");
+        }
+        
+        public addressingMode: number = OpCodes.ModeIndirect;
+        public opCode: number = 0x6c;
+        public execute(cpu: Emulator.ICpu) {
+            var addressLocation: number = cpu.addrPopWord();
+            var newAddress = cpu.peek(addressLocation) + (cpu.peek(addressLocation + 1) << Constants.Memory.BitsInByte);
+            cpu.rPC = newAddress;
+        }
+    }
+
+    registeredOperations.push(JmpIndirect);
 
     export class JmpAbsolute implements IOperation {
         
@@ -424,6 +511,27 @@ module Emulator {
     }
 
     registeredOperations.push(LoadAccumulatorImmediate);
+
+    export class LoadAccumulatorZeroPage implements IOperation {
+        
+        public opName: string = "LDA";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToByte(bytes[1]));
+        }
+        
+        public addressingMode: number = OpCodes.ModeZeroPage;
+        public opCode: number = 0xa5;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.peek(cpu.addrPop());
+            cpu.setFlags(cpu.rA);
+        }
+    }
+
+    registeredOperations.push(LoadAccumulatorZeroPage);
 
     export class LoadYRegisterImmediate implements IOperation {
         
@@ -530,6 +638,27 @@ module Emulator {
     }
 
     registeredOperations.push(StoreAccumulatorAbsolute);
+
+    export class StoreAccumulatorAbsoluteX implements IOperation {
+
+        public opName: string = "STA";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
+        }        
+
+        public addressingMode: number = OpCodes.ModeAbsoluteX;
+        public opCode: number = 0x9d; 
+        public execute(cpu: Emulator.ICpu) {
+            var targetAddress: number = cpu.addrPopWord() + cpu.rX;
+            cpu.poke(targetAddress, cpu.rA);
+        }
+    }
+
+    registeredOperations.push(StoreAccumulatorAbsoluteX);
 
     export class StoreAccumulatorAbsoluteY implements IOperation {
 

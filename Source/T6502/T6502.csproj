@@ -23,6 +23,7 @@
     <Content Include="compilertests.htm" />
     <Content Include="Content\jasmine\jasmine.css" />
     <Content Include="Content\jasmine\jasmine_favicon.png" />
+    <Content Include="opcodetests.htm" />
     <Content Include="Scripts\app\controllers\mainController.js.map">
       <DependentUpon>mainController.ts</DependentUpon>
     </Content>
@@ -106,6 +107,13 @@
     <Content Include="Scripts\tests\mainControllerSpec.js">
       <DependentUpon>eightbitsFilterSpec.ts</DependentUpon>
     </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\adcSpec.ts" />
+    <Content Include="Scripts\tests\opCodes\adcSpec.js">
+      <DependentUpon>adcSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\adcSpec.min.js">
+      <DependentUpon>adcSpec.ts</DependentUpon>
+    </Content>
     <Content Include="tests.htm" />
     <Content Include="web.config" />
     <Content Include="Scripts\jasmine\MIT.LICENSE" />
@@ -132,6 +140,9 @@
     </Content>
     <Content Include="Scripts\app\directives\palette.js.map">
       <DependentUpon>palette.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\adcSpec.js.map">
+      <DependentUpon>adcSpec.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

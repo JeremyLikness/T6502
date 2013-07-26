@@ -14,10 +14,14 @@ var Emulator;
             this.setAddress = /^[\s]*\*[\s]*=[\s]*/;
             this.immediate = /^\#\$?([0-9A-F]{1,3})\s*/;
             this.immediateLabel = /^\#([<>])(\w+)\s*/;
+            this.indirectX = /^\(\$?([0-9A-F]{1,3})(\,\s*X)\)\s*/;
+            this.indirectY = /^\(\$?([0-9A-F]{1,3})\)(\,\s*Y)\s*/;
             this.absoluteX = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/;
             this.absoluteXLabel = /^(\w+)(\,\s*X)\s*/;
             this.absoluteY = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/;
             this.absoluteYLabel = /^(\w+)(\,\s*Y)\s*/;
+            this.indirect = /^\(\$?([0-9A-F]{1,5})\)(^\S)*(\s*\;.*)?$/;
+            this.indirectLabel = /^\(([A-Z_][A-Z0-9_]+)\)\s*/;
             this.absolute = /^\$?([0-9A-F]{1,5})(^\S)*(\s*\;.*)?$/;
             this.absoluteLabel = /^([A-Z_][A-Z0-9_]+)\s*/;
             this.cpu = cpu;
@@ -309,6 +313,68 @@ var Emulator;
                 return compiledLine;
             }
 
+            if (matchArray = parameter.match(this.indirectX)) {
+                hex = parameter[1] === "$";
+                rawValue = matchArray[1];
+                xIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.ByteMask) {
+                    throw "Indirect X-Indexed value of out range: " + value;
+                }
+
+                if (hex) {
+                    parameter = parameter.replace("$", "");
+                }
+
+                parameter = parameter.replace("(", "").replace(")", "");
+                parameter = parameter.replace(xIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                compiledLine.operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeIndexedIndirectX);
+                if (compiledLine.operation === null) {
+                    throw "Opcode doesn't support indirect X-indexed mode " + opCodeName;
+                }
+
+                compiledLine.code.push(compiledLine.operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
+            if (matchArray = parameter.match(this.indirectY)) {
+                hex = parameter[1] === "$";
+                rawValue = matchArray[1];
+                yIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.ByteMask) {
+                    throw "Indexed Indirect-Y value of out range: " + value;
+                }
+
+                if (hex) {
+                    parameter = parameter.replace("$", "");
+                }
+
+                parameter = parameter.replace("(", "").replace(")", "");
+                parameter = parameter.replace(yIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                compiledLine.operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeIndexedIndirectY);
+                if (compiledLine.operation === null) {
+                    throw "Opcode doesn't support indirected indexed-Y mode " + opCodeName;
+                }
+
+                compiledLine.code.push(compiledLine.operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
             if (!parameter.match(this.immediate)) {
                 if (matchArray = parameter.match(this.immediateLabel)) {
                     compiledLine.high = matchArray[1] === ">";
@@ -417,6 +483,39 @@ var Emulator;
                 compiledLine.code.push(value & Constants.Memory.ByteMask);
                 compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
                 compiledLine.processed = true;
+                return compiledLine;
+            }
+
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.indirect, this.indirectLabel);
+            processed = compiledLine.processed;
+
+            if (matchArray = parameter.match(this.indirect)) {
+                hex = parameter[1] === "$";
+                rawValue = matchArray[1];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute value of out range: " + value;
+                }
+
+                if (hex) {
+                    parameter = parameter.replace("$", "");
+                }
+                parameter = parameter.replace("(", "").replace(")", "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                compiledLine.operation = this.getOperationForMode(operations, Emulator.OpCodes.ModeIndirect);
+                if (compiledLine.operation === null) {
+                    throw "Opcode doesn't support indirect mode " + opCodeName;
+                }
+
+                compiledLine.code.push(compiledLine.operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+                compiledLine.processed = processed;
                 return compiledLine;
             }
 
