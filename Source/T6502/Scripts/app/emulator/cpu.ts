@@ -34,7 +34,9 @@ module Emulator {
         poke(address: number, value: number): void;
         peek(address: number): number;
         setFlags(value: number): void;
-        compareWithFlags(registerValue: number, value: number): void;    
+        compareWithFlags(registerValue: number, value: number): void;
+        setFlag(flag: number, setFlag: boolean);    
+        checkFlag(flag: number): boolean;
     }
 
     export interface ICpuExtended extends ICpu {
@@ -121,27 +123,27 @@ module Emulator {
             }
 
             // hack for a miniature program to display the palette 
-            var program = [ 
-                0xa9, 0xe1, // LDA #$E1
-                0x85, 0x00, // STA $0
-                0xa9, 0xFB, // LDA #$FB 
-                0x85, 0x01, // STA $1 
-                0xa0, 0x20, // LDY #$20 
-                0xA2, 0x00, // WRITE: LDX #$00 
-                0x41, 0x00, // EOR ($0, X)
-                0x91, 0x00, // STA ($0), Y 
-                0xE6, 0x00, // INC $0 
-                0xD0, 0xF6, // BNE WRITE 
-                0xE6, 0x01, // INC $1 
-                0xD0, 0xF2, // BNE WRITE 
-                0xA2, 0x00,  // LDX #$00
-                0xFE, 0x00, 0xFC, // CYCLE: INC $FC00, X 
-                0xFE, 0x00, 0xFD, // INC $FD00, X 
-                0xFE, 0x00, 0xFE, // INC $FE00, X 
-                0xFE, 0x00, 0xFF, // INC $FF00, X 
-                0xE8,             // INX   
-                0x4C, 0x1A, 0x02  // JMP CYCLE 
-            ];
+            //var program = [ 
+            //    0xa9, 0xe1, // LDA #$E1
+            //    0x85, 0x00, // STA $0
+            //    0xa9, 0xFB, // LDA #$FB 
+            //    0x85, 0x01, // STA $1 
+            //    0xa0, 0x20, // LDY #$20 
+            //    0xA2, 0x00, // WRITE: LDX #$00 
+            //    0x41, 0x00, // EOR ($0, X)
+            //    0x91, 0x00, // STA ($0), Y 
+            //    0xE6, 0x00, // INC $0 
+            //    0xD0, 0xF6, // BNE WRITE 
+            //    0xE6, 0x01, // INC $1 
+            //    0xD0, 0xF2, // BNE WRITE 
+            //    0xA2, 0x00,  // LDX #$00
+            //    0xFE, 0x00, 0xFC, // CYCLE: INC $FC00, X 
+            //    0xFE, 0x00, 0xFD, // INC $FD00, X 
+            //    0xFE, 0x00, 0xFE, // INC $FE00, X 
+            //    0xFE, 0x00, 0xFF, // INC $FF00, X 
+            //    0xE8,             // INX   
+            //    0x4C, 0x1A, 0x02  // JMP CYCLE 
+            //];
 
             //program = [
             //    0xA2, 0x0D, // START: LDX #$00
@@ -160,10 +162,6 @@ module Emulator {
             //    0x60  // RTS
             //];
 
-            for (idx = 0; idx < program.length; idx++) {
-                this.poke(Constants.Memory.DefaultStart + idx, program[idx]);
-            }
-             
             // reset the display 
             for (idx = 0; idx < this.displayService.pixels.length; idx++) {
                 if (this.displayService.pixels[idx] !== 0x0) {
@@ -238,6 +236,20 @@ module Emulator {
 
             // track instructions per second 
             this.instructions += 1;                                  
+        }
+
+        public checkFlag(flag: number): boolean {
+            return (this.rP & flag) > 0; 
+        }
+
+        public setFlag(flag: number, setFlag: boolean) {
+            var resetFlag: number = Constants.Memory.ByteMask - flag; 
+            if (setFlag) {
+                this.rP |= flag;
+            }
+            else {
+                this.rP &= resetFlag;
+            }
         }
 
         // push a value to the stack or throw an exception when full

@@ -511,7 +511,6 @@ module Tests {
             });            
         });
 
-
         describe("given compiler when absolute mode with X index is specified with invalid value", () => {
             
             var result: boolean;
@@ -611,5 +610,112 @@ module Tests {
                 expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);              
             });            
         });
+
+        describe("given compiler when indexed indirect x encountered", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.ExclusiveOrIndirectX();
+
+            beforeEach(() => {
+                result = compiler.compile("EOR ($44,X)");
+            });
+            
+            it("then should compile to correct code", () => {
+                expect(result).toBe(true);  
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x44);              
+            });            
+        });
+
+        describe("given compiler when indirect indexed y encountered", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.StoreAccumulatorIndirectY();
+
+            beforeEach(() => {
+                result = compiler.compile("STA ($44),Y");
+            });
+            
+            it("then should compile to correct code", () => {
+                expect(result).toBe(true);  
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x44);              
+            });            
+        });
+
+        describe("given compiler when indirect mode is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.JmpIndirect();
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "JMP ($c000)   \n" +
+                    "JMP (49152)   ; this is a comment");
+            });
+            
+            it("then should handle a hex value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0xc0);
+            });
+
+            it("then should handle the decimal value", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 4)).toBe(0x00);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(0xc0);
+            });
+        });
+
+        describe("given compiler when indirect mode using label is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.JmpIndirect();
+
+            beforeEach(() => {
+                result = compiler.compile("LABEL: JMP (LABEL)");
+            });
+            
+            it("then should handle the label", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC & Constants.Memory.ByteMask);
+                expect(cpu.peek(cpu.rPC + 2)).toBe((cpu.rPC >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            });            
+        });
+
+        describe("given compiler when indirect mode using future label is specified", () => {
+            
+            var result: boolean;
+            var opCode: Emulator.IOperation = new Emulator.JmpIndirect();
+
+            beforeEach(() => {
+                result = compiler.compile("JMP (LABEL)\nLABEL:");
+            });
+            
+            it("then should handle the label", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(opCode.opCode);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(cpu.rPC + opCode.sizeBytes & Constants.Memory.ByteMask);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(((cpu.rPC + opCode.sizeBytes) >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            });            
+        });
+
+
+        describe("given compiler when indirect mode is specified with invalid value", () => {
+            
+            var result: boolean;
+
+            beforeEach(() => {
+                result = compiler.compile("JMP ($C0000)");
+            });
+            
+            it("then should not compile", () => {
+                expect(result).toBe(false);                
+            });            
+        });
+
     });
 }

@@ -42,11 +42,15 @@ var Constants;
         function ProcessorStatus() {
         }
         ProcessorStatus.CarryFlagSet = 0x01;
-        ProcessorStatus.CarryFlagReset = 0xFE;
+        ProcessorStatus.CarryFlagReset = Memory.ByteMask - ProcessorStatus.CarryFlagSet;
         ProcessorStatus.ZeroFlagSet = 0x02;
-        ProcessorStatus.ZeroFlagReset = 0xFD;
+        ProcessorStatus.ZeroFlagReset = Memory.ByteMask - ProcessorStatus.ZeroFlagSet;
+        ProcessorStatus.DecimalFlagSet = 0x08;
+        ProcessorStatus.DecimalFlagReset = Memory.ByteMask - ProcessorStatus.DecimalFlagSet;
+        ProcessorStatus.OverflowFlagSet = 0x40;
+        ProcessorStatus.OverflowFlagReset = Memory.ByteMask - ProcessorStatus.OverflowFlagSet;
         ProcessorStatus.NegativeFlagSet = 0x80;
-        ProcessorStatus.NegativeFlagReset = 0x7F;
+        ProcessorStatus.NegativeFlagReset = Memory.ByteMask - ProcessorStatus.NegativeFlagSet;
         return ProcessorStatus;
     })();
     Constants.ProcessorStatus = ProcessorStatus;

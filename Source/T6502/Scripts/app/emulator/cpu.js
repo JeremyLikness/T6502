@@ -53,55 +53,6 @@ var Emulator;
                 this.memory[idx] = 0x00;
             }
 
-            var program = [
-                0xa9,
-                0xe1,
-                0x85,
-                0x00,
-                0xa9,
-                0xFB,
-                0x85,
-                0x01,
-                0xa0,
-                0x20,
-                0xA2,
-                0x00,
-                0x41,
-                0x00,
-                0x91,
-                0x00,
-                0xE6,
-                0x00,
-                0xD0,
-                0xF6,
-                0xE6,
-                0x01,
-                0xD0,
-                0xF2,
-                0xA2,
-                0x00,
-                0xFE,
-                0x00,
-                0xFC,
-                0xFE,
-                0x00,
-                0xFD,
-                0xFE,
-                0x00,
-                0xFE,
-                0xFE,
-                0x00,
-                0xFF,
-                0xE8,
-                0x4C,
-                0x1A,
-                0x02
-            ];
-
-            for (idx = 0; idx < program.length; idx++) {
-                this.poke(Constants.Memory.DefaultStart + idx, program[idx]);
-            }
-
             for (idx = 0; idx < this.displayService.pixels.length; idx++) {
                 if (this.displayService.pixels[idx] !== 0x0) {
                     this.displayService.draw(idx, 0x0);
@@ -173,6 +124,19 @@ var Emulator;
             }
 
             this.instructions += 1;
+        };
+
+        Cpu.prototype.checkFlag = function (flag) {
+            return (this.rP & flag) > 0;
+        };
+
+        Cpu.prototype.setFlag = function (flag, setFlag) {
+            var resetFlag = Constants.Memory.ByteMask - flag;
+            if (setFlag) {
+                this.rP |= flag;
+            } else {
+                this.rP &= resetFlag;
+            }
         };
 
         Cpu.prototype.stackPush = function (value) {

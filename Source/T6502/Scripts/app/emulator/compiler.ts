@@ -51,10 +51,14 @@ module Emulator {
         private setAddress: RegExp = /^[\s]*\*[\s]*=[\s]*/; // for parsing out the value
         private immediate: RegExp = /^\#\$?([0-9A-F]{1,3})\s*/; // #$0A
         private immediateLabel: RegExp = /^\#([<>])(\w+)\s*/; // #<label or #>label 
+        private indirectX: RegExp = /^\(\$?([0-9A-F]{1,3})(\,\s*X)\)\s*/; // ($C0, X)         
+        private indirectY: RegExp = /^\(\$?([0-9A-F]{1,3})\)(\,\s*Y)\s*/; // ($C0), Y         
         private absoluteX: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/; // $C000, X 
         private absoluteXLabel: RegExp = /^(\w+)(\,\s*X)\s*/; // LABEL, X 
         private absoluteY: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/; // $C000, Y 
         private absoluteYLabel: RegExp = /^(\w+)(\,\s*Y)\s*/; // LABEL, Y 
+        private indirect: RegExp = /^\(\$?([0-9A-F]{1,5})\)(^\S)*(\s*\;.*)?$/;  // JMP ($C000)
+        private indirectLabel: RegExp = /^\(([A-Z_][A-Z0-9_]+)\)\s*/; // JMP (LABEL)
         private absolute: RegExp = /^\$?([0-9A-F]{1,5})(^\S)*(\s*\;.*)?$/;  // JMP $C000
         private absoluteLabel: RegExp = /^([A-Z_][A-Z0-9_]+)\s*/; // JMP LABEL
             
@@ -392,6 +396,74 @@ module Emulator {
                 return compiledLine;
             }
 
+            // indexed indirect X 
+            if (matchArray = parameter.match(this.indirectX)) {
+                hex = parameter[1] === "$";
+                rawValue = matchArray[1];
+                xIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.ByteMask) {
+                    throw "Indirect X-Indexed value of out range: " + value;
+                }
+
+                // strip the value to find what's remaining
+                if (hex) { 
+                    parameter = parameter.replace("$", "");
+                }
+
+                // strip the index and parenthesis 
+                parameter = parameter.replace("(", "").replace(")", "");
+                parameter = parameter.replace(xIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+                
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeIndexedIndirectX);
+                if (compiledLine.operation === null) {
+                    throw "Opcode doesn't support indirect X-indexed mode " + opCodeName;
+                }
+
+                compiledLine.code.push(compiledLine.operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
+            // indirect indexed Y 
+            if (matchArray = parameter.match(this.indirectY)) {
+                hex = parameter[1] === "$";
+                rawValue = matchArray[1];
+                yIndex = matchArray[2];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.ByteMask) {
+                    throw "Indexed Indirect-Y value of out range: " + value;
+                }
+
+                // strip the value to find what's remaining
+                if (hex) { 
+                    parameter = parameter.replace("$", "");
+                }
+
+                // strip the index and parenthesis 
+                parameter = parameter.replace("(", "").replace(")", "");
+                parameter = parameter.replace(yIndex, "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+                
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeIndexedIndirectY);
+                if (compiledLine.operation === null) {
+                    throw "Opcode doesn't support indirected indexed-Y mode " + opCodeName;
+                }
+
+                compiledLine.code.push(compiledLine.operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.processed = processed;
+                return compiledLine;
+            }
+
             // immediate with label 
             if (!parameter.match(this.immediate)) {
                 if (matchArray = parameter.match(this.immediateLabel)) {
@@ -513,6 +585,42 @@ module Emulator {
                 compiledLine.code.push(value & Constants.Memory.ByteMask);
                 compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
                 compiledLine.processed = true;
+                return compiledLine;
+            }
+
+            // indirect with label 
+            compiledLine.processed = true;
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.indirect, this.indirectLabel);
+            processed = compiledLine.processed;
+
+            // indirect mode
+            if (matchArray = parameter.match(this.indirect)) {
+                hex = parameter[1] === "$"; 
+                rawValue = matchArray[1];
+                value = parseInt(rawValue, hex ? 16 : 10);
+                if (value < 0 || value > Constants.Memory.Size) {
+                    throw "Absolute value of out range: " + value;
+                }
+
+                // strip the value to find what's remaining
+                if (hex) { 
+                    parameter = parameter.replace("$", "");
+                }
+                parameter = parameter.replace("(", "").replace(")", "");
+                parameter = this.trimLine(parameter.replace(rawValue, ""));
+                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    throw "Invalid assembly: " + opCodeExpression;
+                }
+
+                compiledLine.operation = this.getOperationForMode(operations, OpCodes.ModeIndirect);
+                if (compiledLine.operation === null) {
+                    throw "Opcode doesn't support indirect mode " + opCodeName;
+                }
+
+                compiledLine.code.push(compiledLine.operation.opCode);
+                compiledLine.code.push(value & Constants.Memory.ByteMask);
+                compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
+                compiledLine.processed = processed;
                 return compiledLine;
             }
 

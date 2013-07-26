@@ -59,6 +59,26 @@ var Emulator;
                 operationMap[operation.opCode] = operation;
             }
         };
+
+        OpCodes.AddWithCarry = function (cpu, src) {
+            var temp = src + cpu.rA + (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0);
+            if (cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)) {
+                if (((cpu.rA & 0xF) + (src & 0xF) + (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0)) > 9) {
+                    temp += 6;
+                }
+                var overFlow = !(((cpu.rA ^ src) & 0x80) > 0) && ((cpu.rA ^ temp) & 0x80) > 0;
+                cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, overFlow);
+                if (temp > 0x99) {
+                    temp += 96;
+                }
+                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp > 0x99));
+            } else {
+                var overFlow = !(((cpu.rA ^ src) & 0x80) > 0) && ((cpu.rA ^ temp) & 0x80) > 0;
+                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp > Constants.Memory.ByteMask));
+            }
+            cpu.rA = temp & Constants.Memory.ByteMask;
+            cpu.setFlags(cpu.rA);
+        };
         OpCodes.ModeImmediate = 1;
         OpCodes.ModeZeroPage = 2;
         OpCodes.ModeZeroPageX = 3;
@@ -74,6 +94,47 @@ var Emulator;
         return OpCodes;
     })();
     Emulator.OpCodes = OpCodes;
+
+    var AddWithCarryImmediate = (function () {
+        function AddWithCarryImmediate() {
+            this.opName = "ADC";
+            this.sizeBytes = 0x02;
+            this.addressingMode = OpCodes.ModeImmediate;
+            this.opCode = 0x69;
+        }
+        AddWithCarryImmediate.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        };
+
+        AddWithCarryImmediate.prototype.execute = function (cpu) {
+            OpCodes.AddWithCarry(cpu, cpu.addrPop());
+        };
+        return AddWithCarryImmediate;
+    })();
+    Emulator.AddWithCarryImmediate = AddWithCarryImmediate;
+
+    registeredOperations.push(AddWithCarryImmediate);
+
+    var AndImmediate = (function () {
+        function AndImmediate() {
+            this.opName = "AND";
+            this.sizeBytes = 0x02;
+            this.addressingMode = OpCodes.ModeImmediate;
+            this.opCode = 0x29;
+        }
+        AndImmediate.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        };
+
+        AndImmediate.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.addrPop();
+            cpu.setFlags(cpu.rA);
+        };
+        return AndImmediate;
+    })();
+    Emulator.AndImmediate = AndImmediate;
+
+    registeredOperations.push(AndImmediate);
 
     var BranchNotEqual = (function () {
         function BranchNotEqual() {
@@ -364,6 +425,28 @@ var Emulator;
 
     registeredOperations.push(IncrementX);
 
+    var JmpIndirect = (function () {
+        function JmpIndirect() {
+            this.opName = "JMP";
+            this.sizeBytes = 0x03;
+            this.addressingMode = OpCodes.ModeIndirect;
+            this.opCode = 0x6c;
+        }
+        JmpIndirect.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "($" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ")");
+        };
+
+        JmpIndirect.prototype.execute = function (cpu) {
+            var addressLocation = cpu.addrPopWord();
+            var newAddress = cpu.peek(addressLocation) + (cpu.peek(addressLocation + 1) << Constants.Memory.BitsInByte);
+            cpu.rPC = newAddress;
+        };
+        return JmpIndirect;
+    })();
+    Emulator.JmpIndirect = JmpIndirect;
+
+    registeredOperations.push(JmpIndirect);
+
     var JmpAbsolute = (function () {
         function JmpAbsolute() {
             this.opName = "JMP";
@@ -405,6 +488,27 @@ var Emulator;
     Emulator.LoadAccumulatorImmediate = LoadAccumulatorImmediate;
 
     registeredOperations.push(LoadAccumulatorImmediate);
+
+    var LoadAccumulatorZeroPage = (function () {
+        function LoadAccumulatorZeroPage() {
+            this.opName = "LDA";
+            this.sizeBytes = 0x02;
+            this.addressingMode = OpCodes.ModeZeroPage;
+            this.opCode = 0xa5;
+        }
+        LoadAccumulatorZeroPage.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToByte(bytes[1]));
+        };
+
+        LoadAccumulatorZeroPage.prototype.execute = function (cpu) {
+            cpu.rA = cpu.peek(cpu.addrPop());
+            cpu.setFlags(cpu.rA);
+        };
+        return LoadAccumulatorZeroPage;
+    })();
+    Emulator.LoadAccumulatorZeroPage = LoadAccumulatorZeroPage;
+
+    registeredOperations.push(LoadAccumulatorZeroPage);
 
     var LoadYRegisterImmediate = (function () {
         function LoadYRegisterImmediate() {
@@ -510,6 +614,27 @@ var Emulator;
     Emulator.StoreAccumulatorAbsolute = StoreAccumulatorAbsolute;
 
     registeredOperations.push(StoreAccumulatorAbsolute);
+
+    var StoreAccumulatorAbsoluteX = (function () {
+        function StoreAccumulatorAbsoluteX() {
+            this.opName = "STA";
+            this.sizeBytes = 0x03;
+            this.addressingMode = OpCodes.ModeAbsoluteX;
+            this.opCode = 0x9d;
+        }
+        StoreAccumulatorAbsoluteX.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
+        };
+
+        StoreAccumulatorAbsoluteX.prototype.execute = function (cpu) {
+            var targetAddress = cpu.addrPopWord() + cpu.rX;
+            cpu.poke(targetAddress, cpu.rA);
+        };
+        return StoreAccumulatorAbsoluteX;
+    })();
+    Emulator.StoreAccumulatorAbsoluteX = StoreAccumulatorAbsoluteX;
+
+    registeredOperations.push(StoreAccumulatorAbsoluteX);
 
     var StoreAccumulatorAbsoluteY = (function () {
         function StoreAccumulatorAbsoluteY() {
