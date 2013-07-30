@@ -717,5 +717,43 @@ module Tests {
             });            
         });
 
+        describe("given compiler when label math encountered", () => { 
+            
+            var result: boolean; 
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "main: LDA #$12 \n" + 
+                    "ac_value = main + 5\n" +
+                    "LDA #<ac_value\n" +
+                    "LDA #>ac_value\n");
+            });
+
+            it("then should compile and update the label accordingly", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(5);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(cpu.rPC >> Constants.Memory.BitsInByte);
+            });
+        });
+
+        describe("given compiler when label math encountered with future label", () => { 
+            
+            var result: boolean; 
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "ac_value = main + 5\n" +
+                    "main: LDA #$12 \n" + 
+                    "LDA #<ac_value\n" +
+                    "LDA #>ac_value\n");
+            });
+
+            it("then should compile and update the label accordingly", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(5);
+                expect(cpu.peek(cpu.rPC + 5)).toBe(cpu.rPC >> Constants.Memory.BitsInByte);
+            });
+        });
+
     });
 }

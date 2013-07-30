@@ -114,6 +114,46 @@
     <Content Include="Scripts\tests\opCodes\adcSpec.min.js">
       <DependentUpon>adcSpec.ts</DependentUpon>
     </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\flagSpecs.ts" />
+    <TypeScriptCompile Include="Scripts\tests\opCodes\branchSpecs.ts" />
+    <Content Include="Scripts\tests\opCodes\branchSpecs.js">
+      <DependentUpon>branchSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\branchSpecs.min.js">
+      <DependentUpon>branchSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\flagSpecs.js">
+      <DependentUpon>flagSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\flagSpecs.min.js">
+      <DependentUpon>flagSpecs.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\jsrSpec.ts" />
+    <Content Include="Scripts\tests\opCodes\jsrSpec.js">
+      <DependentUpon>jsrSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\jsrSpec.min.js">
+      <DependentUpon>jsrSpec.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\ldaSpec.ts" />
+    <Content Include="Scripts\tests\opCodes\ldaSpec.js">
+      <DependentUpon>ldaSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\ldaSpec.min.js">
+      <DependentUpon>ldaSpec.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\stackSpecs.ts" />
+    <Content Include="Scripts\tests\opCodes\stackSpecs.js">
+      <DependentUpon>stackSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\stackSpecs.min.js">
+      <DependentUpon>stackSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Source\palette_scroll.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Source\sierpinski.txt" />
+    <Content Include="Source\testoverflow.txt" />
     <Content Include="tests.htm" />
     <Content Include="web.config" />
     <Content Include="Scripts\jasmine\MIT.LICENSE" />
@@ -143,6 +183,21 @@
     </Content>
     <Content Include="Scripts\tests\opCodes\adcSpec.js.map">
       <DependentUpon>adcSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\flagSpecs.js.map">
+      <DependentUpon>flagSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\jsrSpec.js.map">
+      <DependentUpon>jsrSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\branchSpecs.js.map">
+      <DependentUpon>branchSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\ldaSpec.js.map">
+      <DependentUpon>ldaSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\stackSpecs.js.map">
+      <DependentUpon>stackSpecs.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

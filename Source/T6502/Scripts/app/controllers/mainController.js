@@ -5,7 +5,7 @@
 var Main;
 (function (Main) {
     var MainController = (function () {
-        function MainController($scope, consoleService, cpuService, $timeout) {
+        function MainController($scope, consoleService, cpuService, $timeout, $http) {
             var _this = this;
             this.$scope = $scope;
             this.cpuService = cpuService;
@@ -13,6 +13,10 @@ var Main;
             $scope.cpu = cpuService.getCpu();
             $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
+
+            $http.get("Source/palette_scroll.txt").then(function (result) {
+                _this.$scope.compilerInfo = result.data;
+            });
 
             $scope.setPc = function () {
                 _this.$scope.cpu.rPC = parseInt(_this.$scope.pc, 16);
@@ -31,7 +35,7 @@ var Main;
                 _this.cpuService.getCompiler().compile(source);
             };
         }
-        MainController.$inject = ["$scope", "consoleService", "cpuService", "$timeout"];
+        MainController.$inject = ["$scope", "consoleService", "cpuService", "$timeout", "$http"];
         return MainController;
     })();
     Main.MainController = MainController;

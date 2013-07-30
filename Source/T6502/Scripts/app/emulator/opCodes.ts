@@ -106,13 +106,26 @@ module Emulator {
             cpu.rA = temp & Constants.Memory.ByteMask; 
             cpu.setFlags(cpu.rA);
         }
-     }   
 
-    // http://vic-20.appspot.com/docs/6502.txt
-    // Carry = 0 or 1
-    // ADC:  .A = .A + mem + Carry
-    // SBC:  .A = .A + (mem XOR 255) + Carry   ; 2's complement is fun!
-    
+        public static SubtractWithCarry(cpu: Emulator.ICpu, src: number) {
+            var temp: number = cpu.rA - src - (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 0 : 1);
+            cpu.setFlags(temp);
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, (((cpu.rA ^ temp) & 0x80) > 0) && 
+                (((cpu.rA ^ src) & 0x80) > 0));
+            if (cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)) {
+                if ( ((cpu.rA & 0xF)  - (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 0 : 1)) 
+                    < (src & 0x0F) ) {
+                    temp -= 6;
+                }
+                if (temp > 0x99) {
+                    temp -= 0x60;
+                }
+            }
+            cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp < 0x100)); 
+            cpu.rA = temp & Constants.Memory.ByteMask; 
+        }
+    }   
+
     export class AddWithCarryImmediate implements IOperation {
         public opName: string = "ADC";
         public sizeBytes: number = 0x02; 
@@ -131,6 +144,26 @@ module Emulator {
     }
     
     registeredOperations.push(AddWithCarryImmediate);
+    
+    export class AddWithCarryAbsolute implements IOperation {
+        public opName: string = "ADC";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        }
+        
+        addressingMode: number = OpCodes.ModeAbsolute;
+        public opCode: number = 0x6d; 
+        public execute(cpu: Emulator.ICpu) {
+            var targetValue: number = cpu.peek(cpu.addrPopWord());
+            OpCodes.AddWithCarry(cpu, targetValue);
+        }
+    }
+    
+    registeredOperations.push(AddWithCarryAbsolute);
 
     export class AndImmediate implements IOperation {
         
@@ -153,7 +186,7 @@ module Emulator {
     
     registeredOperations.push(AndImmediate);
 
-    export class BranchNotEqual implements IOperation {
+    export class BranchNotEqualRelative implements IOperation {
         
         public opName: string = "BNE";
         public sizeBytes: number = 0x02; 
@@ -167,14 +200,216 @@ module Emulator {
         addressingMode: number = OpCodes.ModeRelative;
         public opCode: number = 0xd0; 
         public execute(cpu: Emulator.ICpu) {
-            var branch = cpu.addrPop();
-            if ((cpu.rP & Constants.ProcessorStatus.ZeroFlagSet) === 0x0) {                
+            var branch: number = cpu.addrPop();
+            if (!cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)) {                
                 cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
             }
         }
     }
     
-    registeredOperations.push(BranchNotEqual);
+    registeredOperations.push(BranchNotEqualRelative);
+
+    export class BranchEqualRelative implements IOperation {
+        
+        public opName: string = "BEQ";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0xf0; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch: number = cpu.addrPop();
+            if (cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchEqualRelative);
+    
+    export class BranchMinusRelative implements IOperation {
+        
+        public opName: string = "BMI";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0x30; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch = cpu.addrPop();
+            if (cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchMinusRelative);
+
+    export class BranchPlusRelative implements IOperation {
+        
+        public opName: string = "BPL";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0x10; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch = cpu.addrPop();
+            if (!cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchPlusRelative);
+
+    export class BranchOverflowClearRelative implements IOperation {
+        
+        public opName: string = "BVC";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0x50; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch: number = cpu.addrPop();
+            if (!cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchOverflowClearRelative);
+
+    export class BranchOverflowSetRelative implements IOperation {
+        
+        public opName: string = "BVS";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0x70; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch: number = cpu.addrPop();
+            if (cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchOverflowSetRelative);
+    
+    export class BranchCarryClearRelative implements IOperation {
+        
+        public opName: string = "BCC";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0x90; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch = cpu.addrPop();
+            if (!cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchCarryClearRelative);
+
+    export class BranchCarrySetRelative implements IOperation {
+        
+        public opName: string = "BCS";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+        }
+        
+        addressingMode: number = OpCodes.ModeRelative;
+        public opCode: number = 0xB0; 
+        public execute(cpu: Emulator.ICpu) {
+            var branch = cpu.addrPop();
+            if (!cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)) {                
+                cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
+            }
+        }
+    }
+    
+    registeredOperations.push(BranchCarrySetRelative);
+
+    export class ClearDecimalSingle implements IOperation {
+        
+        public opName: string = "CLD";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0xD8; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, false);
+        }
+    }
+    
+    registeredOperations.push(ClearDecimalSingle);
+
+    export class CompareAccumulatorImmediate implements IOperation {
+
+        public opName: string = "CMP";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "#$" + OpCodes.ToByte(bytes[1]));
+        }
+
+        public addressingMode: number = OpCodes.ModeImmediate;
+        public opCode: number = 0xc9;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.compareWithFlags(cpu.rA, cpu.addrPop());
+        }
+    }
+
+    registeredOperations.push(CompareAccumulatorImmediate);
+
 
     export class CompareXImmediate implements IOperation {
 
@@ -278,9 +513,7 @@ module Emulator {
         public addressingMode: number = OpCodes.ModeIndexedIndirectX;
         public opCode: number = 0x41;
         public execute(cpu: Emulator.ICpu) {
-            var zeroPage: number = (cpu.addrPop() + cpu.rX) & Constants.Memory.ByteMask;
-            var value: number = cpu.peek(zeroPage) + (cpu.peek(zeroPage + 1) << Constants.Memory.BitsInByte);
-            cpu.rA ^= cpu.peek(value);
+            cpu.rA ^= cpu.peek(cpu.addrIndexedIndirectX());
             cpu.setFlags(cpu.rA);
         }
     }
@@ -351,7 +584,7 @@ module Emulator {
         public addressingMode: number = OpCodes.ModeAbsoluteX;
         public opCode: number = 0xfe;
         public execute(cpu: Emulator.ICpu) {
-            var target: number = cpu.addrPopWord() + cpu.rX;            
+            var target: number = cpu.addrAbsoluteX();
             var value: number = cpu.peek(target);
             value = (value + 1) & Constants.Memory.ByteMask;
             cpu.poke(target, value);
@@ -462,9 +695,7 @@ module Emulator {
         public addressingMode: number = OpCodes.ModeIndirect;
         public opCode: number = 0x6c;
         public execute(cpu: Emulator.ICpu) {
-            var addressLocation: number = cpu.addrPopWord();
-            var newAddress = cpu.peek(addressLocation) + (cpu.peek(addressLocation + 1) << Constants.Memory.BitsInByte);
-            cpu.rPC = newAddress;
+            cpu.rPC = cpu.addrIndirect();
         }
     }
 
@@ -491,6 +722,29 @@ module Emulator {
 
     registeredOperations.push(JmpAbsolute);
 
+    export class JmpSubroutineAbsolute implements IOperation {
+        
+        public opName:string = "JSR";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        }
+        
+        public addressingMode: number = OpCodes.ModeAbsolute;
+        public opCode: number = 0x20;
+        public execute(cpu: Emulator.ICpu) {
+            var newAddress: number = cpu.addrPopWord();
+            cpu.stackPush(((cpu.rPC - 1) >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
+            cpu.stackPush((cpu.rPC - 1) & (Constants.Memory.ByteMask));
+            cpu.rPC = newAddress;
+        }
+    }
+
+    registeredOperations.push(JmpSubroutineAbsolute);
+
     export class LoadAccumulatorImmediate implements IOperation {
         
         public opName: string = "LDA";
@@ -512,6 +766,49 @@ module Emulator {
 
     registeredOperations.push(LoadAccumulatorImmediate);
 
+    export class LoadAccumulatorAbsolute implements IOperation {
+        
+        public opName: string = "LDA";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        }
+        
+        public addressingMode: number = OpCodes.ModeAbsolute;
+        public opCode: number = 0xad;
+        public execute(cpu: Emulator.ICpu) {
+            var memory: number = cpu.addrPopWord();
+            cpu.rA = cpu.peek(memory);
+            cpu.setFlags(cpu.rA);
+        }
+    }
+
+    registeredOperations.push(LoadAccumulatorAbsolute);
+
+    export class LoadAccumulatorAbsoluteX implements IOperation {
+        
+        public opName: string = "LDA";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
+        }
+        
+        public addressingMode: number = OpCodes.ModeAbsoluteX;
+        public opCode: number = 0xbd;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.peek(cpu.addrAbsoluteX());
+            cpu.setFlags(cpu.rA);
+        }
+    }
+
+    registeredOperations.push(LoadAccumulatorAbsoluteX);
+
     export class LoadAccumulatorZeroPage implements IOperation {
         
         public opName: string = "LDA";
@@ -532,6 +829,28 @@ module Emulator {
     }
 
     registeredOperations.push(LoadAccumulatorZeroPage);
+
+    export class LoadYRegisterAbsolute implements IOperation {
+        
+        public opName: string = "LDY";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        }
+                
+        public addressingMode: number = OpCodes.ModeAbsolute; 
+        public opCode: number = 0xac; 
+        public execute(cpu: Emulator.ICpu) {
+            var target: number = cpu.addrPopWord();
+            cpu.rY = cpu.peek(target);
+            cpu.setFlags(cpu.rY);
+        }
+    }
+
+    registeredOperations.push(LoadYRegisterAbsolute);
 
     export class LoadYRegisterImmediate implements IOperation {
         
@@ -598,6 +917,46 @@ module Emulator {
 
     registeredOperations.push(LoadXRegisterZeroPage);
 
+    export class PullAccumulatorSingle implements IOperation {
+
+        public opName: string = "PLA";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0x68;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.stackPop();
+        }
+    }
+
+    registeredOperations.push(PullAccumulatorSingle);
+
+    export class PushAccumulatorSingle implements IOperation {
+
+        public opName: string = "PHA";
+        public sizeBytes: number = 0x01; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "");
+        }
+        
+        public addressingMode: number = OpCodes.ModeSingle;
+        public opCode: number = 0x48;
+        public execute(cpu: Emulator.ICpu) {
+            cpu.stackPush(cpu.rA);
+        }
+    }
+
+    registeredOperations.push(PushAccumulatorSingle);
+
     export class RtsSingle implements IOperation {
 
         public opName: string = "RTS";
@@ -653,8 +1012,7 @@ module Emulator {
         public addressingMode: number = OpCodes.ModeAbsoluteX;
         public opCode: number = 0x9d; 
         public execute(cpu: Emulator.ICpu) {
-            var targetAddress: number = cpu.addrPopWord() + cpu.rX;
-            cpu.poke(targetAddress, cpu.rA);
+            cpu.poke(cpu.addrAbsoluteX(), cpu.rA);
         }
     }
 
@@ -674,8 +1032,7 @@ module Emulator {
         public addressingMode: number = OpCodes.ModeAbsoluteY;
         public opCode: number = 0x99; 
         public execute(cpu: Emulator.ICpu) {
-            var targetAddress: number = cpu.addrPopWord() + cpu.rY;
-            cpu.poke(targetAddress, cpu.rA);
+            cpu.poke(cpu.addrAbsoluteY(), cpu.rA);
         }
     }
 
@@ -695,10 +1052,7 @@ module Emulator {
         public addressingMode: number = OpCodes.ModeIndexedIndirectY;
         public opCode: number = 0x91; 
         public execute(cpu: Emulator.ICpu) {
-            var zeroPage: number = cpu.addrPop();
-            var target: number = cpu.peek(zeroPage) + (cpu.peek(zeroPage + 1) << Constants.Memory.BitsInByte)
-                + cpu.rY; 
-            cpu.poke(target, cpu.rA);
+            cpu.poke(cpu.addrIndirectIndexedY(), cpu.rA);
         }
     }
 
@@ -724,6 +1078,46 @@ module Emulator {
     }
 
     registeredOperations.push(StoreAccumulatorZeroPage);
+
+    export class SubtractWithCarryImmediate implements IOperation {
+        public opName: string = "SBC";
+        public sizeBytes: number = 0x02; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "#$" + OpCodes.ToByte(bytes[1]));
+        }
+        
+        addressingMode: number = OpCodes.ModeImmediate;
+        public opCode: number = 0xe9; 
+        public execute(cpu: Emulator.ICpu) {
+            OpCodes.SubtractWithCarry(cpu, cpu.addrPop());
+        }
+    }
+    
+    registeredOperations.push(SubtractWithCarryImmediate);
+    
+    export class SubtractWithCarryAbsolute implements IOperation {
+        public opName: string = "SBC";
+        public sizeBytes: number = 0x03; 
+        public decompile (address: number, bytes: number[]): string {
+            return OpCodes.ToDecompiledLine(
+                OpCodes.ToWord(address),
+                this.opName,
+                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        }
+        
+        addressingMode: number = OpCodes.ModeAbsolute;
+        public opCode: number = 0xed; 
+        public execute(cpu: Emulator.ICpu) {
+            var targetValue: number = cpu.peek(cpu.addrPopWord());
+            OpCodes.SubtractWithCarry(cpu, targetValue);
+        }
+    }
+    
+    registeredOperations.push(SubtractWithCarryAbsolute);
+
 
     export class TransferAccumulatorToXSingle implements IOperation {
 

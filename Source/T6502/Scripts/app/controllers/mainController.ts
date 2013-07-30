@@ -17,20 +17,25 @@ module Main {
 
     export class MainController {
         
-        public static $inject = ["$scope", "consoleService", "cpuService", "$timeout"];
+        public static $inject = ["$scope", "consoleService", "cpuService", "$timeout", "$http"];
         private cpuService: Services.CpuService;
 
         constructor (
             public $scope: IMainControllerScope,
             consoleService: Services.ConsoleService,
             cpuService: Services.CpuService,
-            $timeout: ng.ITimeoutService) {    
+            $timeout: ng.ITimeoutService,
+            $http: ng.IHttpService) {    
             
             this.cpuService = cpuService;        
             $scope.title = "TypeScript 6502 Emulator.";
             $scope.cpu = cpuService.getCpu();
             $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
+
+            $http.get("Source/palette_scroll.txt").then(result => {
+                this.$scope.compilerInfo = result.data;
+            });
 
             $scope.setPc = () => {
                 this.$scope.cpu.rPC = parseInt(this.$scope.pc, 16);
