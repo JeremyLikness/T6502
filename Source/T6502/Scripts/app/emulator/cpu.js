@@ -66,6 +66,20 @@ var Emulator;
             this.consoleService.log("CPU has been successfully reset.");
         };
 
+        Cpu.prototype.step = function () {
+            if (this.errorState) {
+                this.consoleService.log("Cannot run in error state. Please RESET first.");
+                return;
+            }
+
+            this.runningState = true;
+            this.started = new Date();
+            this.lastCheck = this.started.getTime();
+            this.execute();
+
+            this.stop();
+        };
+
         Cpu.prototype.run = function () {
             var _this = this;
             if (this.runningState) {
