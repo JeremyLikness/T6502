@@ -42,7 +42,9 @@ LOOP: JSR ADD   ; Test ADC
      BPL LOOP  ; Loop until both possiblities of the carry flag are tested
      LDA #0
      STA ERROR ; All tests pass, so store 0 in ERROR
-DONE: RTS
+DONE: 
+LDA ERROR
+RTS
 ;
 ; Test ADC
 ;

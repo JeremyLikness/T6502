@@ -203,6 +203,30 @@ module Tests {
             });
         });
 
+        describe("given compiler when source is provided with labels that match hex", () => {
+                        
+            var result: boolean;
+
+            beforeEach(() => {
+                result = compiler.compile("ADD: JMP ADD");
+            });
+            
+            it("then should resolve the labels and compile the code using the appropriate addresses", () => {
+                var jmpOpcode = new Emulator.JmpAbsolute();
+                var expected: number[] = [ 
+                    jmpOpcode.opCode, 
+                    cpu.rPC & Constants.Memory.ByteMask,
+                    (cpu.rPC >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask ];
+                var actual: number[] = [
+                    cpu.peek(cpu.rPC),
+                    cpu.peek(cpu.rPC + 1),
+                    cpu.peek(cpu.rPC + 2)
+                ];
+                expect(result).toBe(true);
+                expect(JSON.stringify(actual)).toEqual(JSON.stringify(expected));            
+            });
+        });
+
         describe("given compiler when source is provided with duplicate labels", () => {
                         
             var result: boolean;
@@ -566,7 +590,7 @@ module Tests {
         describe("given compiler when branch with address encountered", () => {
             
             var result: boolean;
-            var opCode: Emulator.IOperation = new Emulator.BranchNotEqual();
+            var opCode: Emulator.IOperation = new Emulator.BranchNotEqualRelative();
 
             beforeEach(() => {
                 result = compiler.compile("$c000: BNE $C000");
@@ -582,7 +606,7 @@ module Tests {
         describe("given compiler when branch with label encountered", () => {
             
             var result: boolean;
-            var opCode: Emulator.IOperation = new Emulator.BranchNotEqual();
+            var opCode: Emulator.IOperation = new Emulator.BranchNotEqualRelative();
 
             beforeEach(() => {
                 result = compiler.compile("LABEL: BNE LABEL");
@@ -598,7 +622,7 @@ module Tests {
         describe("given compiler when branch with future label encountered", () => {
             
             var result: boolean;
-            var opCode: Emulator.IOperation = new Emulator.BranchNotEqual();
+            var opCode: Emulator.IOperation = new Emulator.BranchNotEqualRelative();
 
             beforeEach(() => {
                 result = compiler.compile("BNE LABEL\nLABEL:");

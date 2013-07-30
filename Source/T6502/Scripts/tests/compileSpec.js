@@ -182,6 +182,30 @@
             });
         });
 
+        describe("given compiler when source is provided with labels that match hex", function () {
+            var result;
+
+            beforeEach(function () {
+                result = compiler.compile("ADD: JMP ADD");
+            });
+
+            it("then should resolve the labels and compile the code using the appropriate addresses", function () {
+                var jmpOpcode = new Emulator.JmpAbsolute();
+                var expected = [
+                    jmpOpcode.opCode,
+                    cpu.rPC & Constants.Memory.ByteMask,
+                    (cpu.rPC >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask
+                ];
+                var actual = [
+                    cpu.peek(cpu.rPC),
+                    cpu.peek(cpu.rPC + 1),
+                    cpu.peek(cpu.rPC + 2)
+                ];
+                expect(result).toBe(true);
+                expect(JSON.stringify(actual)).toEqual(JSON.stringify(expected));
+            });
+        });
+
         describe("given compiler when source is provided with duplicate labels", function () {
             var result;
             var currentCode;
@@ -503,7 +527,7 @@
 
         describe("given compiler when branch with address encountered", function () {
             var result;
-            var opCode = new Emulator.BranchNotEqual();
+            var opCode = new Emulator.BranchNotEqualRelative();
 
             beforeEach(function () {
                 result = compiler.compile("$c000: BNE $C000");
@@ -518,7 +542,7 @@
 
         describe("given compiler when branch with label encountered", function () {
             var result;
-            var opCode = new Emulator.BranchNotEqual();
+            var opCode = new Emulator.BranchNotEqualRelative();
 
             beforeEach(function () {
                 result = compiler.compile("LABEL: BNE LABEL");
@@ -533,7 +557,7 @@
 
         describe("given compiler when branch with future label encountered", function () {
             var result;
-            var opCode = new Emulator.BranchNotEqual();
+            var opCode = new Emulator.BranchNotEqualRelative();
 
             beforeEach(function () {
                 result = compiler.compile("BNE LABEL\nLABEL:");

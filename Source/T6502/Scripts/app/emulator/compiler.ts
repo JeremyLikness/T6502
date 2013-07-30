@@ -51,17 +51,24 @@ module Emulator {
         private regularLabel: RegExp = /^([A-Z][A-Z_0-9]+):.*/; // LABEL:
         private memorySet: RegExp = /^\*\s*\=\s*[\$]?[0-9A-F]*$/; // *=$C000 or *=49152
         private setAddress: RegExp = /^[\s]*\*[\s]*=[\s]*/; // for parsing out the value
-        private immediate: RegExp = /^\#\$?([0-9A-F]{1,3})\s*/; // #$0A
+        private immediate: RegExp = /^\#([0-9]{1,3})\s*/; // #$0A
+        private immediateHex: RegExp = /^\#([0-9A-F]{1,2})\s*/; // #111
         private immediateLabel: RegExp = /^\#([<>])([A-Z][A-Z_0-9]+)\s*/; // #<label or #>label 
-        private indirectX: RegExp = /^\(\$?([0-9A-F]{1,3})(\,\s*X)\)\s*/; // ($C0, X)         
-        private indirectY: RegExp = /^\(\$?([0-9A-F]{1,3})\)(\,\s*Y)\s*/; // ($C0), Y         
-        private absoluteX: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/; // $C000, X 
+        private indirectX: RegExp = /^\(([0-9]{1,3})(\,\s*X)\)\s*/; // (111, X)         
+        private indirectXHex: RegExp = /^\(([0-9A-F]{1,2})(\,\s*X)\)\s*/; // ($C0, X)         
+        private indirectY: RegExp = /^\(([0-9]{1,3})\)(\,\s*Y)\s*/; // (111), Y         
+        private indirectYHex: RegExp = /^\(([0-9A-F]{1,2})\)(\,\s*Y)\s*/; // ($C0), Y         
+        private absoluteX: RegExp = /^([0-9]{1,5})(\,\s*X)\s*/; // 49152, X 
+        private absoluteXHex: RegExp = /^([0-9A-F]{1,4})(\,\s*X)\s*/; // $C000, X 
         private absoluteXLabel: RegExp = /^([A-Z][A-Z_0-9]+)(\,\s*X)\s*/; // LABEL, X 
-        private absoluteY: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/; // $C000, Y 
+        private absoluteY: RegExp = /^([0-9]{1,5})(\,\s*Y)\s*/; // 49152, Y 
+        private absoluteYHex: RegExp = /^([0-9A-F]{1,4})(\,\s*Y)\s*/; // $C000, Y 
         private absoluteYLabel: RegExp = /^([A-Z][A-Z_0-9]+)(\,\s*Y)\s*/; // LABEL, Y 
-        private indirect: RegExp = /^\(\$?([0-9A-F]{1,5})\)(^\S)*(\s*\;.*)?$/;  // JMP ($C000)
+        private indirect: RegExp = /^\(([0-9]{1,5})\)(^\S)*(\s*\;.*)?$/;  // JMP (49152)
+        private indirectHex: RegExp = /^\(([0-9A-F]{1,4})\)(^\S)*(\s*\;.*)?$/;  // JMP ($C000)
         private indirectLabel: RegExp = /^\(([A-Z][A-Z_0-9]+)\)\s*/; // JMP (LABEL)
-        private absolute: RegExp = /^\$?([0-9A-F]{1,5})(^\S)*(\s*\;.*)?$/;  // JMP $C000
+        private absolute: RegExp = /^([0-9]{1,5})(^\S)*(\s*\;.*)?$/;  // JMP 49152
+        private absoluteHex: RegExp = /^([0-9A-F]{1,4})(^\S)*(\s*\;.*)?$/;  // JMP $C000
         private absoluteLabel: RegExp = /^([A-Z][A-Z_0-9]+)\s*/; // JMP LABEL
             
         constructor(
@@ -222,7 +229,7 @@ module Emulator {
                 if(input.match(this.memoryLabelHex) || input.match(this.memoryLabelDec)) {
                     
                     memoryLabels++;                    
-                    var hex = input.match(this.memoryLabelHex);
+                    var hex: boolean = !!input.match(this.memoryLabelHex);
                     label = hex ? this.memoryLabelHex.exec(input)[1] : this.memoryLabelDec.exec(input)[1];
                     
                     // strip the label out 
@@ -376,6 +383,8 @@ module Emulator {
             var label: string;
             var labelInstance: ILabel;
             var processed: boolean;
+            var test: RegExp;
+            var radix: number = 10;
 
             if (opCodeName in this.opCodeCache) {
                 operations = this.opCodeCache[opCodeName];
@@ -394,27 +403,31 @@ module Emulator {
 
             parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
 
+            hex = parameter.indexOf("$") >= 0;
+
+            if (hex) {
+                parameter = parameter.replace("$", "");
+                radix = 16;
+            }
+
             // branches 
             if (operations[0].addressingMode === OpCodes.ModeRelative) {
-            
+        
+                test = hex ? this.absoluteHex : this.absolute;
+                    
                 // absolute with label 
                 compiledLine.processed = true;
-                parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+                parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteLabel);
                 processed = compiledLine.processed;
 
-                // absolute mode 
-                if (matchArray = parameter.match(this.absolute)) {
-                    hex = parameter[0] === "$"; 
+                // absolute mode
+                if (matchArray = parameter.match(test)) {
                     rawValue = matchArray[1];
-                    value = parseInt(rawValue, hex ? 16 : 10);
+                    value = parseInt(rawValue, radix);
                     if (value < 0 || value > Constants.Memory.Size) {
                         throw "Absolute value of out range: " + value;
                     }
 
-                    // strip the value to find what's remaining
-                    if (hex) { 
-                        parameter = parameter.replace("$", "");
-                    }
                     parameter = this.trimLine(parameter.replace(rawValue, ""));
                     if (parameter.match(this.notWhitespace)) {
                         throw "Invalid assembly: " + opCodeExpression;
@@ -454,18 +467,13 @@ module Emulator {
             }
 
             // indexed indirect X 
-            if (matchArray = parameter.match(this.indirectX)) {
-                hex = parameter[1] === "$";
+            test = hex ? this.indirectXHex : this.indirectX;
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 xIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Indirect X-Indexed value of out range: " + value;
-                }
-
-                // strip the value to find what's remaining
-                if (hex) { 
-                    parameter = parameter.replace("$", "");
                 }
 
                 // strip the index and parenthesis 
@@ -488,18 +496,13 @@ module Emulator {
             }
 
             // indirect indexed Y 
-            if (matchArray = parameter.match(this.indirectY)) {
-                hex = parameter[1] === "$";
+            test = hex ? this.indirectYHex : this.indirectY;
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 yIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Indexed Indirect-Y value of out range: " + value;
-                }
-
-                // strip the value to find what's remaining
-                if (hex) { 
-                    parameter = parameter.replace("$", "");
                 }
 
                 // strip the index and parenthesis 
@@ -522,7 +525,8 @@ module Emulator {
             }
 
             // immediate with label 
-            if (!parameter.match(this.immediate)) {
+            test = hex ? this.immediateHex : this.immediate;
+            if (!parameter.match(test)) {
                 if (matchArray = parameter.match(this.immediateLabel)) {
                     compiledLine.high = matchArray[1] === ">"; 
                     label = matchArray[2];
@@ -541,17 +545,16 @@ module Emulator {
             }
 
             // immediate mode 
-            if (matchArray = parameter.match(this.immediate)) {
+            if (matchArray = parameter.match(test)) {
                 
-                hex = parameter[1] === "$"; 
                 rawValue = matchArray[1];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Immediate value of out range: " + value;
                 }
 
                 // strip the value to find what's remaining 
-                parameter = parameter.replace(hex ? "#$" : "#", "");
+                parameter = parameter.replace("#", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
@@ -568,23 +571,19 @@ module Emulator {
                 return compiledLine;
             }
 
+            // absolute with X-index mode 
+            test = hex ? this.absoluteXHex : this.absoluteX; 
+            
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteX, this.absoluteXLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteXLabel);
             processed = compiledLine.processed; 
             
-            // absolute with X-index mode 
-            if (matchArray = parameter.match(this.absoluteX)) {
-                hex = parameter[0] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 xIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute X-Indexed value of out range: " + value;
-                }
-
-                // strip the value to find what's remaining
-                if (hex) { 
-                    parameter = parameter.replace("$", "");
                 }
 
                 // strip the index
@@ -607,23 +606,19 @@ module Emulator {
             }
 
             // absolute with Y-index label 
+            test = hex ? this.absoluteYHex : this.absoluteY;
+            
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteY, this.absoluteYLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteYLabel);
             processed = compiledLine.processed;
 
             // absolute with Y-index mode 
-            if (matchArray = parameter.match(this.absoluteY)) {
-                hex = parameter[0] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 yIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute Y-Indexed value of out range: " + value;
-                }
-
-                // strip the value to find what's remaining
-                if (hex) { 
-                    parameter = parameter.replace("$", "");
                 }
 
                 // strip the index
@@ -646,23 +641,20 @@ module Emulator {
             }
 
             // indirect with label 
+            test = hex ? this.indirectHex : this.indirect;
+
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.indirect, this.indirectLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.indirectLabel);
             processed = compiledLine.processed;
 
             // indirect mode
-            if (matchArray = parameter.match(this.indirect)) {
-                hex = parameter[1] === "$"; 
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute value of out range: " + value;
                 }
 
-                // strip the value to find what's remaining
-                if (hex) { 
-                    parameter = parameter.replace("$", "");
-                }
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
@@ -682,23 +674,20 @@ module Emulator {
             }
 
             // absolute with label 
+            test = hex ? this.absoluteHex : this.absolute;
+
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteLabel);
             processed = compiledLine.processed;
 
             // absolute mode 
-            if (matchArray = parameter.match(this.absolute)) {
-                hex = parameter[0] === "$"; 
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute value of out range: " + value;
                 }
 
-                // strip the value to find what's remaining
-                if (hex) { 
-                    parameter = parameter.replace("$", "");
-                }
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;

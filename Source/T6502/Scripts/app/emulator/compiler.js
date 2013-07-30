@@ -12,17 +12,24 @@ var Emulator;
             this.regularLabel = /^([A-Z][A-Z_0-9]+):.*/;
             this.memorySet = /^\*\s*\=\s*[\$]?[0-9A-F]*$/;
             this.setAddress = /^[\s]*\*[\s]*=[\s]*/;
-            this.immediate = /^\#\$?([0-9A-F]{1,3})\s*/;
+            this.immediate = /^\#([0-9]{1,3})\s*/;
+            this.immediateHex = /^\#([0-9A-F]{1,2})\s*/;
             this.immediateLabel = /^\#([<>])([A-Z][A-Z_0-9]+)\s*/;
-            this.indirectX = /^\(\$?([0-9A-F]{1,3})(\,\s*X)\)\s*/;
-            this.indirectY = /^\(\$?([0-9A-F]{1,3})\)(\,\s*Y)\s*/;
-            this.absoluteX = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/;
+            this.indirectX = /^\(([0-9]{1,3})(\,\s*X)\)\s*/;
+            this.indirectXHex = /^\(([0-9A-F]{1,2})(\,\s*X)\)\s*/;
+            this.indirectY = /^\(([0-9]{1,3})\)(\,\s*Y)\s*/;
+            this.indirectYHex = /^\(([0-9A-F]{1,2})\)(\,\s*Y)\s*/;
+            this.absoluteX = /^([0-9]{1,5})(\,\s*X)\s*/;
+            this.absoluteXHex = /^([0-9A-F]{1,4})(\,\s*X)\s*/;
             this.absoluteXLabel = /^([A-Z][A-Z_0-9]+)(\,\s*X)\s*/;
-            this.absoluteY = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/;
+            this.absoluteY = /^([0-9]{1,5})(\,\s*Y)\s*/;
+            this.absoluteYHex = /^([0-9A-F]{1,4})(\,\s*Y)\s*/;
             this.absoluteYLabel = /^([A-Z][A-Z_0-9]+)(\,\s*Y)\s*/;
-            this.indirect = /^\(\$?([0-9A-F]{1,5})\)(^\S)*(\s*\;.*)?$/;
+            this.indirect = /^\(([0-9]{1,5})\)(^\S)*(\s*\;.*)?$/;
+            this.indirectHex = /^\(([0-9A-F]{1,4})\)(^\S)*(\s*\;.*)?$/;
             this.indirectLabel = /^\(([A-Z][A-Z_0-9]+)\)\s*/;
-            this.absolute = /^\$?([0-9A-F]{1,5})(^\S)*(\s*\;.*)?$/;
+            this.absolute = /^([0-9]{1,5})(^\S)*(\s*\;.*)?$/;
+            this.absoluteHex = /^([0-9A-F]{1,4})(^\S)*(\s*\;.*)?$/;
             this.absoluteLabel = /^([A-Z][A-Z_0-9]+)\s*/;
             this.cpu = cpu;
             this.consoleService = consoleService;
@@ -160,7 +167,7 @@ var Emulator;
 
                 if (input.match(this.memoryLabelHex) || input.match(this.memoryLabelDec)) {
                     memoryLabels++;
-                    var hex = input.match(this.memoryLabelHex);
+                    var hex = !!input.match(this.memoryLabelHex);
                     label = hex ? this.memoryLabelHex.exec(input)[1] : this.memoryLabelDec.exec(input)[1];
 
                     input = input.replace(label + ":", "");
@@ -298,6 +305,8 @@ var Emulator;
             var label;
             var labelInstance;
             var processed;
+            var test;
+            var radix = 10;
 
             if (opCodeName in this.opCodeCache) {
                 operations = this.opCodeCache[opCodeName];
@@ -314,22 +323,27 @@ var Emulator;
 
             parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
 
+            hex = parameter.indexOf("$") >= 0;
+
+            if (hex) {
+                parameter = parameter.replace("$", "");
+                radix = 16;
+            }
+
             if (operations[0].addressingMode === Emulator.OpCodes.ModeRelative) {
+                test = hex ? this.absoluteHex : this.absolute;
+
                 compiledLine.processed = true;
-                parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+                parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteLabel);
                 processed = compiledLine.processed;
 
-                if (matchArray = parameter.match(this.absolute)) {
-                    hex = parameter[0] === "$";
+                if (matchArray = parameter.match(test)) {
                     rawValue = matchArray[1];
-                    value = parseInt(rawValue, hex ? 16 : 10);
+                    value = parseInt(rawValue, radix);
                     if (value < 0 || value > Constants.Memory.Size) {
                         throw "Absolute value of out range: " + value;
                     }
 
-                    if (hex) {
-                        parameter = parameter.replace("$", "");
-                    }
                     parameter = this.trimLine(parameter.replace(rawValue, ""));
                     if (parameter.match(this.notWhitespace)) {
                         throw "Invalid assembly: " + opCodeExpression;
@@ -365,17 +379,13 @@ var Emulator;
                 return compiledLine;
             }
 
-            if (matchArray = parameter.match(this.indirectX)) {
-                hex = parameter[1] === "$";
+            test = hex ? this.indirectXHex : this.indirectX;
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 xIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Indirect X-Indexed value of out range: " + value;
-                }
-
-                if (hex) {
-                    parameter = parameter.replace("$", "");
                 }
 
                 parameter = parameter.replace("(", "").replace(")", "");
@@ -396,17 +406,13 @@ var Emulator;
                 return compiledLine;
             }
 
-            if (matchArray = parameter.match(this.indirectY)) {
-                hex = parameter[1] === "$";
+            test = hex ? this.indirectYHex : this.indirectY;
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 yIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Indexed Indirect-Y value of out range: " + value;
-                }
-
-                if (hex) {
-                    parameter = parameter.replace("$", "");
                 }
 
                 parameter = parameter.replace("(", "").replace(")", "");
@@ -427,7 +433,8 @@ var Emulator;
                 return compiledLine;
             }
 
-            if (!parameter.match(this.immediate)) {
+            test = hex ? this.immediateHex : this.immediate;
+            if (!parameter.match(test)) {
                 if (matchArray = parameter.match(this.immediateLabel)) {
                     compiledLine.high = matchArray[1] === ">";
                     label = matchArray[2];
@@ -443,15 +450,14 @@ var Emulator;
                 }
             }
 
-            if (matchArray = parameter.match(this.immediate)) {
-                hex = parameter[1] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.ByteMask) {
                     throw "Immediate value of out range: " + value;
                 }
 
-                parameter = parameter.replace(hex ? "#$" : "#", "");
+                parameter = parameter.replace("#", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
@@ -468,21 +474,18 @@ var Emulator;
                 return compiledLine;
             }
 
+            test = hex ? this.absoluteXHex : this.absoluteX;
+
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteX, this.absoluteXLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteXLabel);
             processed = compiledLine.processed;
 
-            if (matchArray = parameter.match(this.absoluteX)) {
-                hex = parameter[0] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 xIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute X-Indexed value of out range: " + value;
-                }
-
-                if (hex) {
-                    parameter = parameter.replace("$", "");
                 }
 
                 parameter = parameter.replace(xIndex, "");
@@ -503,21 +506,18 @@ var Emulator;
                 return compiledLine;
             }
 
+            test = hex ? this.absoluteYHex : this.absoluteY;
+
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absoluteY, this.absoluteYLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteYLabel);
             processed = compiledLine.processed;
 
-            if (matchArray = parameter.match(this.absoluteY)) {
-                hex = parameter[0] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
                 yIndex = matchArray[2];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute Y-Indexed value of out range: " + value;
-                }
-
-                if (hex) {
-                    parameter = parameter.replace("$", "");
                 }
 
                 parameter = parameter.replace(yIndex, "");
@@ -538,21 +538,19 @@ var Emulator;
                 return compiledLine;
             }
 
+            test = hex ? this.indirectHex : this.indirect;
+
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.indirect, this.indirectLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.indirectLabel);
             processed = compiledLine.processed;
 
-            if (matchArray = parameter.match(this.indirect)) {
-                hex = parameter[1] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute value of out range: " + value;
                 }
 
-                if (hex) {
-                    parameter = parameter.replace("$", "");
-                }
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
@@ -571,21 +569,19 @@ var Emulator;
                 return compiledLine;
             }
 
+            test = hex ? this.absoluteHex : this.absolute;
+
             compiledLine.processed = true;
-            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, this.absolute, this.absoluteLabel);
+            parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteLabel);
             processed = compiledLine.processed;
 
-            if (matchArray = parameter.match(this.absolute)) {
-                hex = parameter[0] === "$";
+            if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
-                value = parseInt(rawValue, hex ? 16 : 10);
+                value = parseInt(rawValue, radix);
                 if (value < 0 || value > Constants.Memory.Size) {
                     throw "Absolute value of out range: " + value;
                 }
 
-                if (hex) {
-                    parameter = parameter.replace("$", "");
-                }
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
