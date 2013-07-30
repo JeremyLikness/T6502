@@ -59,6 +59,7 @@
                     <button data-ng-submit="" data-ng-click="setPc()" data-ng-disabled="compileForm.programStart.$invalid || cpu.runningState" data-ng-enabled="!cpu.runningState">Set</button>
                     <button data-ng-click="compile()" data-ng-enabled="!cpu.runningState" data-ng-disabled="cpu.runningState">Compile</button>
                     <button data-ng-click="decompile()" data-ng-disabled="compileForm.programStart.$invalid">Disassemble</button>
+                    <button data-ng-click="dump()" data-ng-disabled="compileForm.programStart.$invalid">Dump</button>
                 </div>
                 <div>
                     <span style="color: red;" data-ng-show="compileForm.programStart.$error.hexadecimal">Enter a valid hexadecimal address between 0 and FFFF.&nbsp;</span>                    

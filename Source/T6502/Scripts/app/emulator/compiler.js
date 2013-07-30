@@ -59,6 +59,22 @@ var Emulator;
             return lines.join("\r\n");
         };
 
+        Compiler.prototype.dump = function (startAddress) {
+            var address = startAddress & Constants.Memory.Max;
+            var instructions = 0;
+            var lines = [];
+
+            while (instructions < Constants.Memory.MaxInstructionsDecompile && address <= Constants.Memory.Max) {
+                var line = "$" + Emulator.OpCodes.ToWord(address) + ": " + Emulator.OpCodes.ToByte(this.cpu.peek(address)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 1)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 2)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 3)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 4)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 5)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 6)) + " " + Emulator.OpCodes.ToByte(this.cpu.peek(address + 7));
+
+                lines.push(line);
+                instructions += 1;
+                address += 8;
+            }
+
+            return lines.join("\r\n");
+        };
+
         Compiler.prototype.compile = function (source) {
             var lines = source.split('\n');
             this.pcAddress = this.cpu.rPC;

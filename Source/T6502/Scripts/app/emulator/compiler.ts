@@ -7,6 +7,7 @@ module Emulator {
     export interface ICompiler {
         compile(source: string): bool;
         decompile(startAddress: number): string;
+        dump(startAddress: number): string;
     }
 
     // label includes the name for the label and its address
@@ -100,6 +101,40 @@ module Emulator {
 
                 instructions += 1;
                 address += operation.sizeBytes;
+            }
+
+            return lines.join("\r\n");
+        }
+
+        public dump(startAddress: number): string {
+            
+            var address: number = startAddress & Constants.Memory.Max;
+            var instructions: number = 0;
+            var lines: string[] = [];
+
+            while (instructions < Constants.Memory.MaxInstructionsDecompile && address <= Constants.Memory.Max) {
+            
+                var line: string = "$" + OpCodes.ToWord(address) +
+                    ": " + 
+                    OpCodes.ToByte(this.cpu.peek(address)) + 
+                    " " + 
+                    OpCodes.ToByte(this.cpu.peek(address + 1)) + 
+                    " " +
+                    OpCodes.ToByte(this.cpu.peek(address + 2)) + 
+                    " " +
+                    OpCodes.ToByte(this.cpu.peek(address + 3)) + 
+                    " " +
+                    OpCodes.ToByte(this.cpu.peek(address + 4)) + 
+                    " " + 
+                    OpCodes.ToByte(this.cpu.peek(address + 5)) + 
+                    " " +
+                    OpCodes.ToByte(this.cpu.peek(address + 6)) + 
+                    " " +
+                    OpCodes.ToByte(this.cpu.peek(address + 7)); 
+                
+                lines.push(line);    
+                instructions += 1;
+                address += 8;
             }
 
             return lines.join("\r\n");
