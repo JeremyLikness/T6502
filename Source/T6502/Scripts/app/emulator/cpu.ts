@@ -5,7 +5,18 @@
 
 module Emulator {
 
-    export interface ICpu {
+    export interface IOpcodeSupport {
+        addrAbsoluteX(): number;
+        addrAbsoluteY(): number; 
+        addrIndirect(): number;
+        addrIndexedIndirectX(): number;
+        addrIndirectIndexedY(): number;
+    }
+
+    export interface ICpu extends IOpcodeSupport {
+
+        debug: boolean;
+
         rA: number;
         rX: number;
         rY: number;
@@ -45,6 +56,8 @@ module Emulator {
 
     export class Cpu implements ICpuExtended {
             
+        public debug: boolean; 
+
         public rA: number;
         public rX: number;
         public rY: number;
@@ -83,6 +96,7 @@ module Emulator {
             this.timeoutService = timeoutService;
             OpCodes.FillOps(this.operationMap);
             this.autoRefresh = true;
+            this.debug = false;
             this.reset();
         }
 
@@ -121,46 +135,6 @@ module Emulator {
             for (idx = 0; idx < this.memory.length; idx++) {
                 this.memory[idx] = 0x00;
             }
-
-            // hack for a miniature program to display the palette 
-            //var program = [ 
-            //    0xa9, 0xe1, // LDA #$E1
-            //    0x85, 0x00, // STA $0
-            //    0xa9, 0xFB, // LDA #$FB 
-            //    0x85, 0x01, // STA $1 
-            //    0xa0, 0x20, // LDY #$20 
-            //    0xA2, 0x00, // WRITE: LDX #$00 
-            //    0x41, 0x00, // EOR ($0, X)
-            //    0x91, 0x00, // STA ($0), Y 
-            //    0xE6, 0x00, // INC $0 
-            //    0xD0, 0xF6, // BNE WRITE 
-            //    0xE6, 0x01, // INC $1 
-            //    0xD0, 0xF2, // BNE WRITE 
-            //    0xA2, 0x00,  // LDX #$00
-            //    0xFE, 0x00, 0xFC, // CYCLE: INC $FC00, X 
-            //    0xFE, 0x00, 0xFD, // INC $FD00, X 
-            //    0xFE, 0x00, 0xFE, // INC $FE00, X 
-            //    0xFE, 0x00, 0xFF, // INC $FF00, X 
-            //    0xE8,             // INX   
-            //    0x4C, 0x1A, 0x02  // JMP CYCLE 
-            //];
-
-            //program = [
-            //    0xA2, 0x0D, // START: LDX #$00
-            //    0xA9, 0x00,  // LDA #$00
-            //    0x85, 0x00, // STA $0
-            //    0xa9, 0xFC, // LDA #$FC 
-            //    0x85, 0x01, // STA $1 
-            //    0xa0, 0x00, // LDY #$00 
-            //    0xa9, 0x00, // WRITE: LDA #$00
-            //    0x91, 0x00, // STA ($0), Y 
-            //    0xFE, 0x00, 0x02, // INC $0200, X
-            //    0xE6, 0x00, // INC $0 
-            //    0xD0, 0xF5, // BNE WRITE 
-            //    0xE6, 0x01, // INC $1 
-            //    0xD0, 0xF1, // BNE WRITE 
-            //    0x60  // RTS
-            //];
 
             // reset the display 
             for (idx = 0; idx < this.displayService.pixels.length; idx++) {
@@ -227,7 +201,19 @@ module Emulator {
             }
 
             try {
-                this.operationMap[this.addrPop()].execute(this);                
+                var oldAddress: number = this.rPC; 
+                var op: IOperation = this.operationMap[this.addrPop()];
+
+                if (this.debug) {
+                    this.consoleService.log(op.decompile(
+                        oldAddress, [
+                            op.opCode, 
+                            this.memory[oldAddress + 1],
+                            this.memory[oldAddress + 2]
+                        ]));
+                }
+                
+                op.execute(this);                
             }
             catch(exception) {
                 this.consoleService.log("Unexpected exception: " + exception);
@@ -342,6 +328,33 @@ module Emulator {
             }
 
             this.setFlags(registerValue - value);
+        }
+
+        public addrAbsoluteX(): number {
+            return (this.addrPopWord() + this.rX) & Constants.Memory.Max;
+        }
+
+        public addrAbsoluteY(): number {
+            return (this.addrPopWord() + this.rY) & Constants.Memory.Max;
+        }
+
+        public addrIndirect(): number {
+            var addressLocation: number = this.addrPopWord();
+            var newAddress: number = this.peek(addressLocation) + (this.peek(addressLocation + 1) << Constants.Memory.BitsInByte);
+            return newAddress & Constants.Memory.Max;
+        }
+
+        public addrIndexedIndirectX(): number {
+            var zeroPage: number = (this.addrPop() + this.rX) & Constants.Memory.ByteMask;
+            var address: number = this.peek(zeroPage) + (this.peek(zeroPage + 1) << Constants.Memory.BitsInByte);
+            return address;
+        }
+
+        public addrIndirectIndexedY(): number {
+            var zeroPage: number = this.addrPop();
+            var target: number = this.peek(zeroPage) + (this.peek(zeroPage + 1) << Constants.Memory.BitsInByte)
+                + this.rY; 
+            return target;
         }
 
         getOperation(value: number): IOperation {

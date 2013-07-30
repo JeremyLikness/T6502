@@ -13,6 +13,8 @@ module Emulator {
     export interface ILabel {
         address: number;
         labelName: string;
+        dependentLabelName: string;
+        offset: number;
     }
 
     // a compiled line including the address it is at, any code, whether the 
@@ -43,24 +45,24 @@ module Emulator {
         private notWhitespace: RegExp = /\S/; // true when there is non-whitespace
         private whitespaceTrim: RegExp = /^\s+/; // trim whitespace
         private whitespaceTrimEnd: RegExp = /\s+$/; // further trim whitespace
-        private comment: RegExp = /^\;.*/; // ; comment line
+        private labelMath: RegExp = /^\s*([A-Z][A-Z_0-9]+)\s*=\s*([A-Z][A-Z_0-9]+)\s*([\+\-])\s*([0-9]{1,3})\s*$/; // LABEL = OTHERLABEL + 1
         private memoryLabelHex: RegExp = /^(\$[0-9A-F]+):.*/; // $C000:
         private memoryLabelDec: RegExp = /^([0-9]+):.*/; // 49152:
-        private regularLabel: RegExp = /^(\w+):.*/; // LABEL:
+        private regularLabel: RegExp = /^([A-Z][A-Z_0-9]+):.*/; // LABEL:
         private memorySet: RegExp = /^\*\s*\=\s*[\$]?[0-9A-F]*$/; // *=$C000 or *=49152
         private setAddress: RegExp = /^[\s]*\*[\s]*=[\s]*/; // for parsing out the value
         private immediate: RegExp = /^\#\$?([0-9A-F]{1,3})\s*/; // #$0A
-        private immediateLabel: RegExp = /^\#([<>])(\w+)\s*/; // #<label or #>label 
+        private immediateLabel: RegExp = /^\#([<>])([A-Z][A-Z_0-9]+)\s*/; // #<label or #>label 
         private indirectX: RegExp = /^\(\$?([0-9A-F]{1,3})(\,\s*X)\)\s*/; // ($C0, X)         
         private indirectY: RegExp = /^\(\$?([0-9A-F]{1,3})\)(\,\s*Y)\s*/; // ($C0), Y         
         private absoluteX: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*X)\s*/; // $C000, X 
-        private absoluteXLabel: RegExp = /^(\w+)(\,\s*X)\s*/; // LABEL, X 
+        private absoluteXLabel: RegExp = /^([A-Z][A-Z_0-9]+)(\,\s*X)\s*/; // LABEL, X 
         private absoluteY: RegExp = /^\$?([0-9A-F]{1,5})(\,\s*Y)\s*/; // $C000, Y 
-        private absoluteYLabel: RegExp = /^(\w+)(\,\s*Y)\s*/; // LABEL, Y 
+        private absoluteYLabel: RegExp = /^([A-Z][A-Z_0-9]+)(\,\s*Y)\s*/; // LABEL, Y 
         private indirect: RegExp = /^\(\$?([0-9A-F]{1,5})\)(^\S)*(\s*\;.*)?$/;  // JMP ($C000)
-        private indirectLabel: RegExp = /^\(([A-Z_][A-Z0-9_]+)\)\s*/; // JMP (LABEL)
+        private indirectLabel: RegExp = /^\(([A-Z][A-Z_0-9]+)\)\s*/; // JMP (LABEL)
         private absolute: RegExp = /^\$?([0-9A-F]{1,5})(^\S)*(\s*\;.*)?$/;  // JMP $C000
-        private absoluteLabel: RegExp = /^([A-Z_][A-Z0-9_]+)\s*/; // JMP LABEL
+        private absoluteLabel: RegExp = /^([A-Z][A-Z_0-9]+)\s*/; // JMP LABEL
             
         constructor(
             cpu: Emulator.ICpuExtended, 
@@ -115,15 +117,17 @@ module Emulator {
 
                 this.consoleService.log("Compilation complete.");
                 
+                var totalBytes: number = 0;
                 var idx: number;
                 var offset: number;
                 for (idx = 0; idx < compiled.compiledLines.length; idx++) {
                     var compiledLine: ICompiledLine = compiled.compiledLines[idx];
                     for (offset = 0; offset < compiledLine.code.length; offset++) {
                         this.cpu.poke(compiledLine.address + offset, compiledLine.code[offset]);
+                        totalBytes += 1;
                     }
                 }
-                this.consoleService.log("Code loaded to memory.");
+                this.consoleService.log(totalBytes.toString(10) + " bytes of code loaded to memory.");
                 this.cpu.rPC = this.pcAddress; // most recent address set in source
             }
             catch (e) {
@@ -146,6 +150,8 @@ module Emulator {
             var actualLabels: number = 0;
             var idx: number;
             var parameter: string;
+            var instance: ILabel; 
+            var target: ILabel; 
 
             var result: ICompilerResult = {
                 labels: [],
@@ -158,6 +164,11 @@ module Emulator {
                 
                 var input = lines[idx].toUpperCase();
                 
+                // split any comments off 
+                if (input.indexOf(";") >= 0) {
+                    input = input.split(";")[0];
+                }
+
                 input = this.trimLine(input);
 
                 if(!input.match(this.notWhitespace)) {
@@ -173,7 +184,41 @@ module Emulator {
                     address = testAddress;
                     continue;
                 }
-                
+        
+                // check to see if label math is being performed
+                if (input.match(this.labelMath)) {
+                    var matches: RegExpExecArray = this.labelMath.exec(input);
+                    if (matches.length !== 5) {
+                        throw "Invalid label math at line " + (idx+1) + ": " + input; 
+                    }
+                    label = matches[1];
+                    var otherLabel = matches[2];
+                    
+                    if (this.labelExists(label, result.labels)) {
+                        throw "Duplicate label " + label + " found at line " + (idx+1);
+                    }
+
+                    if (label === otherLabel) {
+                        throw "Cannot redefine label " + label + " at line " + (idx+1);
+                    }
+
+                    var offset: number = parseInt(matches[4], 10);
+                    
+                    if (matches[3] === "-") {
+                        offset *= -1; 
+                    }
+
+                    result.labels.push({
+                        address: address,
+                        labelName: label,
+                        dependentLabelName: otherLabel,
+                        offset: offset
+                    });
+
+                    actualLabels++;
+                    continue;
+                }
+                        
                 if(input.match(this.memoryLabelHex) || input.match(this.memoryLabelDec)) {
                     
                     memoryLabels++;                    
@@ -201,7 +246,9 @@ module Emulator {
                         }
                         result.labels.push({
                             address: address,
-                            labelName: label
+                            labelName: label,
+                            dependentLabelName: undefined,
+                            offset: 0
                         });
                         actualLabels++;
                         input = input.replace(label + ":", "");
@@ -222,6 +269,21 @@ module Emulator {
                 catch(e) {
                     throw e + " Line: " + (idx + 1);
                 }                                
+            }
+
+            // now update labels that are based on math 
+            for(idx = 0; idx < result.labels.length; idx++) {
+                instance = result.labels[idx]; 
+                if (instance.dependentLabelName === undefined) {
+                    continue;
+                }
+                target = this.findLabel(instance.dependentLabelName, result.labels);
+                if (target === null) {
+                    throw "Unable to process label " + instance.labelName + ": missing dependent label " +
+                    instance.dependentLabelName;
+                }
+                instance.address = (target.address + instance.offset) & Constants.Memory.Max;
+                instance.dependentLabelName = undefined;
             }
         
             this.consoleService.log("Parsed " + memoryLabels + " memory tags and " + actualLabels + " labels.");            
@@ -257,11 +319,6 @@ module Emulator {
                 return "";
             }
 
-            // comment 
-            if (this.comment.test(input)) {
-               return "";
-            }
-                
             // trim the line 
             input = input.replace(this.whitespaceTrim, "").replace(this.whitespaceTrimEnd, "");
 
@@ -359,7 +416,7 @@ module Emulator {
                         parameter = parameter.replace("$", "");
                     }
                     parameter = this.trimLine(parameter.replace(rawValue, ""));
-                    if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                    if (parameter.match(this.notWhitespace)) {
                         throw "Invalid assembly: " + opCodeExpression;
                     }
 
@@ -415,7 +472,7 @@ module Emulator {
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = parameter.replace(xIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
@@ -449,7 +506,7 @@ module Emulator {
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = parameter.replace(yIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
@@ -496,7 +553,7 @@ module Emulator {
                 // strip the value to find what's remaining 
                 parameter = parameter.replace(hex ? "#$" : "#", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
@@ -533,7 +590,7 @@ module Emulator {
                 // strip the index
                 parameter = parameter.replace(xIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
@@ -572,7 +629,7 @@ module Emulator {
                 // strip the index
                 parameter = parameter.replace(yIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
                 
@@ -608,7 +665,7 @@ module Emulator {
                 }
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
 
@@ -643,7 +700,7 @@ module Emulator {
                     parameter = parameter.replace("$", "");
                 }
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
-                if (parameter.match(this.notWhitespace) && !parameter.match(this.comment)) {
+                if (parameter.match(this.notWhitespace)) {
                     throw "Invalid assembly: " + opCodeExpression;
                 }
 
@@ -660,7 +717,7 @@ module Emulator {
                 if (mode === OpCodes.ModeAbsolute) {
                     compiledLine.code.push((value >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask); 
                 }
-                compiledLine.processed = true;
+                compiledLine.processed = processed;
                 return compiledLine;
             }
 
@@ -722,7 +779,7 @@ module Emulator {
         private findLabel(label: string, labels: ILabel[]): ILabel {
             var index: number; 
             for (index = 0; index < labels.length; index++) {
-                if (labels[index].labelName === label) {
+                if (labels[index].labelName === label && labels[index].dependentLabelName === undefined) {
                     return labels[index];
                 }
             }

@@ -1,3 +1,12 @@
+/// <reference path='../jasmine.d.ts'/>
+/// <reference path='../../app/defs/angular.d.ts'/>
+/// <reference path='../angular-mocks.d.ts'/>
+/// <reference path='../../app/defs/jquery.d.ts'/>
+/// <reference path='../../app/app.ts'/>
+/// <reference path='../../app/services/cpuService.ts'/>
+/// <reference path='../../app/services/consoleService.ts'/>
+/// <reference path='../../app/emulator/compiler.ts'/>
+/// <reference path='../../app/emulator/opCodes.ts'/>
 var Tests;
 (function (Tests) {
     describe("ADC - Add with Carry", function () {
@@ -114,3 +123,4 @@ var Tests;
         });
     });
 })(Tests || (Tests = {}));
+//@ sourceMappingURL=adcSpec.js.map

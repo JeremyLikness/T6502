@@ -16,6 +16,7 @@ var Emulator;
             this.timeoutService = timeoutService;
             Emulator.OpCodes.FillOps(this.operationMap);
             this.autoRefresh = true;
+            this.debug = false;
             this.reset();
         }
         Cpu.prototype.stop = function () {
@@ -117,7 +118,18 @@ var Emulator;
             }
 
             try  {
-                this.operationMap[this.addrPop()].execute(this);
+                var oldAddress = this.rPC;
+                var op = this.operationMap[this.addrPop()];
+
+                if (this.debug) {
+                    this.consoleService.log(op.decompile(oldAddress, [
+                        op.opCode,
+                        this.memory[oldAddress + 1],
+                        this.memory[oldAddress + 2]
+                    ]));
+                }
+
+                op.execute(this);
             } catch (exception) {
                 this.consoleService.log("Unexpected exception: " + exception);
                 this.halt();
@@ -215,6 +227,32 @@ var Emulator;
             }
 
             this.setFlags(registerValue - value);
+        };
+
+        Cpu.prototype.addrAbsoluteX = function () {
+            return (this.addrPopWord() + this.rX) & Constants.Memory.Max;
+        };
+
+        Cpu.prototype.addrAbsoluteY = function () {
+            return (this.addrPopWord() + this.rY) & Constants.Memory.Max;
+        };
+
+        Cpu.prototype.addrIndirect = function () {
+            var addressLocation = this.addrPopWord();
+            var newAddress = this.peek(addressLocation) + (this.peek(addressLocation + 1) << Constants.Memory.BitsInByte);
+            return newAddress & Constants.Memory.Max;
+        };
+
+        Cpu.prototype.addrIndexedIndirectX = function () {
+            var zeroPage = (this.addrPop() + this.rX) & Constants.Memory.ByteMask;
+            var address = this.peek(zeroPage) + (this.peek(zeroPage + 1) << Constants.Memory.BitsInByte);
+            return address;
+        };
+
+        Cpu.prototype.addrIndirectIndexedY = function () {
+            var zeroPage = this.addrPop();
+            var target = this.peek(zeroPage) + (this.peek(zeroPage + 1) << Constants.Memory.BitsInByte) + this.rY;
+            return target;
         };
 
         Cpu.prototype.getOperation = function (value) {
