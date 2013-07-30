@@ -10,7 +10,8 @@ module Main {
         cpu: Emulator.ICpu;
         pc: string;
         compilerInfo: string;
-        decompile: () => void;   
+        decompile: () => void; 
+        dump: () => void;  
         compile: () => void;    
         setPc: () => void; 
     }
@@ -44,6 +45,16 @@ module Main {
             $scope.decompile = () => {
                 try {
                     this.$scope.compilerInfo = this.cpuService.getCompiler().decompile(
+                        parseInt(this.$scope.pc, 16)); 
+                }
+                catch (e) {
+                    this.$scope.compilerInfo = e;
+                }
+            }
+
+            $scope.dump = () => {
+                try {
+                    this.$scope.compilerInfo = this.cpuService.getCompiler().dump(
                         parseInt(this.$scope.pc, 16)); 
                 }
                 catch (e) {
