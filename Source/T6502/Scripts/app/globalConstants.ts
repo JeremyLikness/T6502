@@ -28,6 +28,7 @@ module Constants {
         public static XFactor: number = Display.CanvasXMax / Display.XMax; 
         public static YFactor: number = Display.CanvasYMax / Display.YMax;
         public static DisplayStart: number = 0xFC00;
+        public static ConsoleLines: number = 100;
     }
 
     export class ProcessorStatus {

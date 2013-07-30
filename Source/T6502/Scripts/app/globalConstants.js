@@ -34,6 +34,7 @@ var Constants;
         Display.XFactor = Display.CanvasXMax / Display.XMax;
         Display.YFactor = Display.CanvasYMax / Display.YMax;
         Display.DisplayStart = 0xFC00;
+        Display.ConsoleLines = 100;
         return Display;
     })();
     Constants.Display = Display;

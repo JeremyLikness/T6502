@@ -6,6 +6,10 @@ var Services;
         }
         ConsoleService.prototype.log = function (message) {
             this.lines.push(message);
+
+            if (this.lines.length > Constants.Display.ConsoleLines) {
+                this.lines.splice(0, 1);
+            }
         };
         return ConsoleService;
     })();
