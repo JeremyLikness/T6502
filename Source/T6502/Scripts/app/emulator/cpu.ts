@@ -35,6 +35,7 @@ module Emulator {
         reset(): void;
         halt(): void;
         stop(): void;
+        step(): void;
         run(): void;
         
         addrPop(): number;
@@ -147,6 +148,20 @@ module Emulator {
             this.errorState = false;
 
             this.consoleService.log("CPU has been successfully reset.");
+        }
+
+        public step(): void {
+            if (this.errorState) {
+                this.consoleService.log("Cannot run in error state. Please RESET first.");
+                return;
+            }
+
+            this.runningState = true;
+            this.started = new Date();
+            this.lastCheck = this.started.getTime();
+            this.execute();
+            
+            this.stop();
         }
 
         // kicks of the execution of code

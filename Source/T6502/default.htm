@@ -32,6 +32,7 @@
             <button data-ng-click="cpu.run()" data-ng-enabled="!cpu.runningState && !cpu.errorState" data-ng-disabled="cpu.runningState || cpu.errorState">Run</button>
             <input type="checkbox" data-ng-model="cpu.autoRefresh"/>Refresh&nbsp;
             <input type="checkbox" data-ng-model="cpu.debug"/>Debug
+            <button data-ng-click="cpu.step()" data-ng-enabled="!cpu.runningState && !cpu.errorState && cpu.debug" data-ng-disabled="cpu.runningState || cpu.errorState || !cpu.debug">Step</button>
             <table>
                 <tr><th>PC</th><th>SP</th><th>A</th><th>X</th><th>Y</th><td>NV-BDIZC</td><th>Runtime</th><th>IPS</th></tr>
                 <tr>
