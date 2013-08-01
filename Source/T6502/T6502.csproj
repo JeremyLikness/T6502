@@ -143,6 +143,13 @@
       <DependentUpon>ldaSpec.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="Scripts\tests\opCodes\stackSpecs.ts" />
+    <TypeScriptCompile Include="Scripts\tests\opCodes\sbcSpec.ts" />
+    <Content Include="Scripts\tests\opCodes\sbcSpec.js">
+      <DependentUpon>sbcSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\sbcSpec.min.js">
+      <DependentUpon>sbcSpec.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\tests\opCodes\stackSpecs.js">
       <DependentUpon>stackSpecs.ts</DependentUpon>
     </Content>
@@ -153,6 +160,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Source\sierpinski.txt" />
+    <Content Include="Source\testdecimal.txt" />
     <Content Include="Source\testoverflow.txt" />
     <Content Include="tests.htm" />
     <Content Include="web.config" />
@@ -198,6 +206,9 @@
     </Content>
     <Content Include="Scripts\tests\opCodes\stackSpecs.js.map">
       <DependentUpon>stackSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\sbcSpec.js.map">
+      <DependentUpon>sbcSpec.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

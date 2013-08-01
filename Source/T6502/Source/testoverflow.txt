@@ -5,17 +5,6 @@
 ; Five (additional) memory locations are used: ERROR, S1, S2, U1, and U2
 ; which can be located anywhere convenient in RAM
 ;
-*=$C000 
-ERROR: 
-*=$C001 
-S1: 
-*=$C002 
-S2: 
-*=$C003 
-U1: 
-*=$C004 
-U2: 
-*=$0200 
 TEST: CLD       ; Clear decimal mode (just in case) for test
      LDA #1
      STA ERROR ; Store 1 in ERROR until test passes
@@ -104,3 +93,9 @@ SUB4: PLA      ; Get the low byte of result (does not affect the carry flag)
      BPL SUB5 ; result >= 65280 ($FF00), A <= 127 if result <= 65407 ($FF7F)
      INX      ; Increment X if result > 65407 ($FF7F)
 SUB5: RTS 
+
+ERROR: RTS 
+S1: RTS
+S2: RTS
+U1: RTS
+U2: RTS
