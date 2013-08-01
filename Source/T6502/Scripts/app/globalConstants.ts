@@ -5,6 +5,7 @@ module Constants {
         public static Size: number = Memory.Max + 0x01;
         public static ByteMask: number = 0xFF; 
         public static NibbleMask: number = 0x0F; 
+        public static HighNibbleMask: number = 0xF0; 
         public static Stack: number = 0x0100;
         public static BitsInByte: number = 8;
         public static DefaultStart: number = 0x0200;

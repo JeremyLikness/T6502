@@ -7,6 +7,7 @@ var Constants;
         Memory.Size = Memory.Max + 0x01;
         Memory.ByteMask = 0xFF;
         Memory.NibbleMask = 0x0F;
+        Memory.HighNibbleMask = 0xF0;
         Memory.Stack = 0x0100;
         Memory.BitsInByte = 8;
         Memory.DefaultStart = 0x0200;
@@ -56,3 +57,4 @@ var Constants;
     })();
     Constants.ProcessorStatus = ProcessorStatus;
 })(Constants || (Constants = {}));
+//@ sourceMappingURL=globalConstants.js.map

@@ -17,12 +17,6 @@ module Tests {
         var consoleSvc: Services.IConsoleService;
         var operation: Emulator.IOperation;
 
-        function toHexAddress(address: number) {
-            var padding: string = "0000";
-            var result: string = padding + address.toString(16);
-            return result.substring(result.length - 4, result.length).toUpperCase();                
-        }
-  
         beforeEach(() => {    
             module('app');          
         });
@@ -38,6 +32,7 @@ module Tests {
         describe("ADC Immediate", () => {
             beforeEach(() => {
                 operation = new Emulator.AddWithCarryImmediate();
+                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, false);
             });
 
             describe("given not decimal mode and no carry flag set", () => {
@@ -77,6 +72,37 @@ module Tests {
                 it("then should add the numbers and set the carry flag", () => {
                     expect(cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)).toBe(true);
                     expect(cpu.rA).toBe((0xFE + 0x02) & Constants.Memory.ByteMask);
+                });
+            });
+
+            describe("given no unsigned carry but signed overflow", () => {
+                
+                beforeEach(() => {
+                    cpu.poke(cpu.rPC, 0x50);
+                    cpu.rA = 0x50;
+                    cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, false);
+                    operation.execute(cpu);
+                }); 
+
+                it("then should add the numbers and set the overflow flag", () => {
+                    expect(cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)).toBe(true);
+                    expect(cpu.rA).toBe(0xa0);
+                });
+            });
+
+            describe("given unsigned carry and signed overflow", () => {
+                
+                beforeEach(() => {
+                    cpu.poke(cpu.rPC, 0xd0);
+                    cpu.rA = 0x90;
+                    cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, false);
+                    operation.execute(cpu);
+                }); 
+
+                it("then should add the numbers and set the carry and set the overflow flag", () => {
+                    expect(cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)).toBe(true);
+                    expect(cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)).toBe(true);
+                    expect(cpu.rA).toBe(0x60);
                 });
             });
 

@@ -1,3 +1,5 @@
+///<reference path="cpu.ts"/>
+///<reference path="compiler.ts"/>
 var Emulator;
 (function (Emulator) {
     var registeredOperations = [];
@@ -61,39 +63,89 @@ var Emulator;
         };
 
         OpCodes.AddWithCarry = function (cpu, src) {
-            var temp = src + cpu.rA + (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0);
+            var temp;
+            var carryFactor = cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0;
+            var overflowFlag;
+
+            function offsetAdjustAdd(offs, cutOff) {
+                if (offs >= cutOff) {
+                    cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, true);
+                    if (cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet) && offs >= 0x180) {
+                        cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, false);
+                    }
+                    return true;
+                } else {
+                    cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, false);
+                    if (cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet) && offs < Constants.ProcessorStatus.NegativeFlagSet) {
+                        cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, false);
+                    }
+                    return false;
+                }
+            }
+
+            overflowFlag = !((cpu.rA ^ src) & Constants.ProcessorStatus.NegativeFlagSet);
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, overflowFlag);
             if (cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)) {
-                if (((cpu.rA & 0xF) + (src & 0xF) + (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0)) > 9) {
-                    temp += 6;
+                temp = (cpu.rA & Constants.Memory.NibbleMask) + (src & Constants.Memory.NibbleMask) + carryFactor;
+                if (temp >= 0x0A) {
+                    temp = 0x10 | ((temp + 0x06) & Constants.Memory.NibbleMask);
                 }
-                var overFlow = !(((cpu.rA ^ src) & 0x80) > 0) && ((cpu.rA ^ temp) & 0x80) > 0;
-                cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, overFlow);
-                if (temp > 0x99) {
-                    temp += 96;
+                temp += (cpu.rA & Constants.Memory.HighNibbleMask) + (src & Constants.Memory.HighNibbleMask);
+                if (offsetAdjustAdd(temp, 0xA0)) {
+                    temp += 0x60;
                 }
-                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp > 0x99));
             } else {
-                var overFlow = !(((cpu.rA ^ src) & 0x80) > 0) && ((cpu.rA ^ temp) & 0x80) > 0;
-                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp > Constants.Memory.ByteMask));
+                temp = cpu.rA + src + carryFactor;
+                offsetAdjustAdd(temp, 0x100);
             }
             cpu.rA = temp & Constants.Memory.ByteMask;
             cpu.setFlags(cpu.rA);
         };
 
         OpCodes.SubtractWithCarry = function (cpu, src) {
-            var temp = cpu.rA - src - (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 0 : 1);
-            cpu.setFlags(temp);
-            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, (((cpu.rA ^ temp) & 0x80) > 0) && (((cpu.rA ^ src) & 0x80) > 0));
-            if (cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)) {
-                if (((cpu.rA & 0xF) - (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 0 : 1)) < (src & 0x0F)) {
-                    temp -= 6;
-                }
-                if (temp > 0x99) {
-                    temp -= 0x60;
+            var temp, offset, carryFactor;
+            var overflowFlag;
+
+            function offsetAdjustSub(offs) {
+                if (offs < 0x100) {
+                    cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, false);
+                    if (cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet) && offs < Constants.ProcessorStatus.NegativeFlagSet) {
+                        cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, false);
+                    }
+                    return true;
+                } else {
+                    cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, true);
+                    if (cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet) && offset >= 0x180) {
+                        cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, false);
+                    }
+                    return false;
                 }
             }
-            cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, (temp < 0x100));
-            cpu.rA = temp & Constants.Memory.ByteMask;
+            ;
+
+            carryFactor = cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet) ? 1 : 0;
+
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, !!((cpu.rA ^ src) & Constants.ProcessorStatus.NegativeFlagSet));
+            if (cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)) {
+                temp = Constants.Memory.NibbleMask + (cpu.rA & Constants.Memory.NibbleMask) - (src & Constants.Memory.NibbleMask) + carryFactor;
+                if (temp < 0x10) {
+                    offset = 0;
+                    temp -= 0x06;
+                } else {
+                    offset = 0x10;
+                    temp -= 0x10;
+                }
+                offset += Constants.Memory.HighNibbleMask + (cpu.rA & Constants.Memory.HighNibbleMask) - (src & Constants.Memory.HighNibbleMask);
+                if (offsetAdjustSub(offset)) {
+                    offset -= 0x60;
+                }
+                offset += temp;
+            } else {
+                offset = Constants.Memory.ByteMask + cpu.rA - src + carryFactor;
+                offsetAdjustSub(offset);
+            }
+            cpu.rA = offset & Constants.Memory.ByteMask;
+            cpu.setFlags(cpu.rA);
         };
         OpCodes.ModeImmediate = 1;
         OpCodes.ModeZeroPage = 2;
@@ -347,7 +399,7 @@ var Emulator;
 
         BranchCarrySetRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
-            if (!cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)) {
+            if (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)) {
                 cpu.rPC = OpCodes.computeBranch(cpu.rPC, branch);
             }
         };
@@ -909,6 +961,7 @@ var Emulator;
 
         PullAccumulatorSingle.prototype.execute = function (cpu) {
             cpu.rA = cpu.stackPop();
+            cpu.setFlags(cpu.rA);
         };
         return PullAccumulatorSingle;
     })();
@@ -1183,3 +1236,4 @@ var Emulator;
 
     registeredOperations.push(TransferYToAccumulatorSingle);
 })(Emulator || (Emulator = {}));
+//@ sourceMappingURL=opCodes.js.map
