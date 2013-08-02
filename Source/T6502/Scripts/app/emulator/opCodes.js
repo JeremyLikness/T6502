@@ -1,5 +1,9 @@
-///<reference path="cpu.ts"/>
-///<reference path="compiler.ts"/>
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var Emulator;
 (function (Emulator) {
     var registeredOperations = [];
@@ -46,6 +50,54 @@ var Emulator;
 
         OpCodes.ToDecompiledLine = function (address, opCode, parm) {
             return "$" + address + ": " + opCode + " " + parm;
+        };
+
+        OpCodes.ProcessLine = function (address, op, bytes) {
+            if (op.addressingMode === OpCodes.ModeImmediate) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "#$" + OpCodes.ToByte(bytes[1]));
+            }
+
+            if (op.addressingMode === OpCodes.ModeZeroPage) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "$" + OpCodes.ToByte(bytes[1]));
+            }
+
+            if (op.addressingMode === OpCodes.ModeZeroPageX) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "$" + OpCodes.ToByte(bytes[1]) + ",X");
+            }
+
+            if (op.addressingMode === OpCodes.ModeAbsolute) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+            }
+
+            if (op.addressingMode === OpCodes.ModeAbsoluteX) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
+            }
+
+            if (op.addressingMode === OpCodes.ModeAbsoluteY) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", Y");
+            }
+
+            if (op.addressingMode === OpCodes.ModeRelative) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
+            }
+
+            if (op.addressingMode === OpCodes.ModeSingle) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "");
+            }
+
+            if (op.addressingMode === OpCodes.ModeIndexedIndirectX) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "($" + OpCodes.ToByte(bytes[1]) + ", X)");
+            }
+
+            if (op.addressingMode === OpCodes.ModeIndexedIndirectY) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "($" + OpCodes.ToByte(bytes[1]) + "), Y");
+            }
+
+            if (op.addressingMode === OpCodes.ModeIndirect) {
+                return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), op.opName, "($" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ")");
+            }
+
+            throw "Unknown addressing mode.";
         };
 
         OpCodes.FillOps = function (operationMap) {
@@ -163,79 +215,153 @@ var Emulator;
     })();
     Emulator.OpCodes = OpCodes;
 
-    var AddWithCarryImmediate = (function () {
-        function AddWithCarryImmediate() {
-            this.opName = "ADC";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeImmediate;
-            this.opCode = 0x69;
+    var BaseOpCode = (function () {
+        function BaseOpCode(opName, sizeBytes, addressingMode, opCode) {
+            this.opName = opName;
+            this.sizeBytes = sizeBytes;
+            this.addressingMode = addressingMode;
+            this.opCode = opCode;
         }
-        AddWithCarryImmediate.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        BaseOpCode.prototype.decompile = function (address, bytes) {
+            return OpCodes.ProcessLine(address, this, bytes);
         };
 
+        BaseOpCode.prototype.execute = function (cpu) {
+            return;
+        };
+        return BaseOpCode;
+    })();
+    Emulator.BaseOpCode = BaseOpCode;
+
+    var AddWithCarryImmediate = (function (_super) {
+        __extends(AddWithCarryImmediate, _super);
+        function AddWithCarryImmediate() {
+            _super.call(this, "ADC", 0x02, OpCodes.ModeImmediate, 0x69);
+        }
         AddWithCarryImmediate.prototype.execute = function (cpu) {
             OpCodes.AddWithCarry(cpu, cpu.addrPop());
         };
         return AddWithCarryImmediate;
-    })();
+    })(BaseOpCode);
     Emulator.AddWithCarryImmediate = AddWithCarryImmediate;
-
     registeredOperations.push(AddWithCarryImmediate);
 
-    var AddWithCarryAbsolute = (function () {
-        function AddWithCarryAbsolute() {
-            this.opName = "ADC";
-            this.sizeBytes = 0x03;
-            this.addressingMode = OpCodes.ModeAbsolute;
-            this.opCode = 0x6d;
+    var AddWithCarryZeroPage = (function (_super) {
+        __extends(AddWithCarryZeroPage, _super);
+        function AddWithCarryZeroPage() {
+            _super.call(this, "ADC", 0x02, OpCodes.ModeZeroPage, 0x65);
         }
-        AddWithCarryAbsolute.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        AddWithCarryZeroPage.prototype.execute = function (cpu) {
+            var zeroPage = cpu.addrPop();
+            OpCodes.AddWithCarry(cpu, cpu.peek(zeroPage));
         };
+        return AddWithCarryZeroPage;
+    })(BaseOpCode);
+    Emulator.AddWithCarryZeroPage = AddWithCarryZeroPage;
+    registeredOperations.push(AddWithCarryZeroPage);
 
+    var AddWithCarryZeroPageX = (function (_super) {
+        __extends(AddWithCarryZeroPageX, _super);
+        function AddWithCarryZeroPageX() {
+            _super.call(this, "ADC", 0x02, OpCodes.ModeZeroPageX, 0x75);
+        }
+        AddWithCarryZeroPageX.prototype.execute = function (cpu) {
+            OpCodes.AddWithCarry(cpu, cpu.peek(cpu.addrZeroPageX()));
+        };
+        return AddWithCarryZeroPageX;
+    })(BaseOpCode);
+    Emulator.AddWithCarryZeroPageX = AddWithCarryZeroPageX;
+    registeredOperations.push(AddWithCarryZeroPageX);
+
+    var AddWithCarryAbsolute = (function (_super) {
+        __extends(AddWithCarryAbsolute, _super);
+        function AddWithCarryAbsolute() {
+            _super.call(this, "ADC", 0x03, OpCodes.ModeAbsolute, 0x6D);
+        }
         AddWithCarryAbsolute.prototype.execute = function (cpu) {
             var targetValue = cpu.peek(cpu.addrPopWord());
             OpCodes.AddWithCarry(cpu, targetValue);
         };
         return AddWithCarryAbsolute;
-    })();
+    })(BaseOpCode);
     Emulator.AddWithCarryAbsolute = AddWithCarryAbsolute;
-
     registeredOperations.push(AddWithCarryAbsolute);
 
-    var AndImmediate = (function () {
-        function AndImmediate() {
-            this.opName = "AND";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeImmediate;
-            this.opCode = 0x29;
+    var AddWithCarryAbsoluteX = (function (_super) {
+        __extends(AddWithCarryAbsoluteX, _super);
+        function AddWithCarryAbsoluteX() {
+            _super.call(this, "ADC", 0x03, OpCodes.ModeAbsoluteX, 0x7D);
         }
-        AndImmediate.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        AddWithCarryAbsoluteX.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrAbsoluteX());
+            OpCodes.AddWithCarry(cpu, targetValue);
         };
+        return AddWithCarryAbsoluteX;
+    })(BaseOpCode);
+    Emulator.AddWithCarryAbsoluteX = AddWithCarryAbsoluteX;
+    registeredOperations.push(AddWithCarryAbsoluteX);
 
+    var AddWithCarryAbsoluteY = (function (_super) {
+        __extends(AddWithCarryAbsoluteY, _super);
+        function AddWithCarryAbsoluteY() {
+            _super.call(this, "ADC", 0x03, OpCodes.ModeAbsoluteY, 0x79);
+        }
+        AddWithCarryAbsoluteY.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrAbsoluteY());
+            OpCodes.AddWithCarry(cpu, targetValue);
+        };
+        return AddWithCarryAbsoluteY;
+    })(BaseOpCode);
+    Emulator.AddWithCarryAbsoluteY = AddWithCarryAbsoluteY;
+    registeredOperations.push(AddWithCarryAbsoluteY);
+
+    var AddWithCarryIndexedIndirectX = (function (_super) {
+        __extends(AddWithCarryIndexedIndirectX, _super);
+        function AddWithCarryIndexedIndirectX() {
+            _super.call(this, "ADC", 0x02, OpCodes.ModeIndexedIndirectX, 0x61);
+        }
+        AddWithCarryIndexedIndirectX.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrIndexedIndirectX());
+            OpCodes.AddWithCarry(cpu, targetValue);
+        };
+        return AddWithCarryIndexedIndirectX;
+    })(BaseOpCode);
+    Emulator.AddWithCarryIndexedIndirectX = AddWithCarryIndexedIndirectX;
+    registeredOperations.push(AddWithCarryIndexedIndirectX);
+
+    var AddWithCarryIndirectIndexedY = (function (_super) {
+        __extends(AddWithCarryIndirectIndexedY, _super);
+        function AddWithCarryIndirectIndexedY() {
+            _super.call(this, "ADC", 0x02, OpCodes.ModeIndexedIndirectY, 0x71);
+        }
+        AddWithCarryIndirectIndexedY.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrIndirectIndexedY());
+            OpCodes.AddWithCarry(cpu, targetValue);
+        };
+        return AddWithCarryIndirectIndexedY;
+    })(BaseOpCode);
+    Emulator.AddWithCarryIndirectIndexedY = AddWithCarryIndirectIndexedY;
+    registeredOperations.push(AddWithCarryIndirectIndexedY);
+
+    var AndImmediate = (function (_super) {
+        __extends(AndImmediate, _super);
+        function AndImmediate() {
+            _super.call(this, "AND", 0x02, OpCodes.ModeImmediate, 0x29);
+        }
         AndImmediate.prototype.execute = function (cpu) {
             cpu.rA = cpu.rA & cpu.addrPop();
             cpu.setFlags(cpu.rA);
         };
         return AndImmediate;
-    })();
+    })(BaseOpCode);
     Emulator.AndImmediate = AndImmediate;
-
     registeredOperations.push(AndImmediate);
 
-    var BranchNotEqualRelative = (function () {
+    var BranchNotEqualRelative = (function (_super) {
+        __extends(BranchNotEqualRelative, _super);
         function BranchNotEqualRelative() {
-            this.opName = "BNE";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0xd0;
+            _super.call(this, "BNE", 0x02, OpCodes.ModeRelative, 0xD0);
         }
-        BranchNotEqualRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchNotEqualRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (!cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)) {
@@ -243,9 +369,8 @@ var Emulator;
             }
         };
         return BranchNotEqualRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchNotEqualRelative = BranchNotEqualRelative;
-
     registeredOperations.push(BranchNotEqualRelative);
 
     var BranchEqualRelative = (function () {
@@ -1111,6 +1236,27 @@ var Emulator;
 
     registeredOperations.push(StoreAccumulatorZeroPage);
 
+    var StoreYRegisterAbsolute = (function () {
+        function StoreYRegisterAbsolute() {
+            this.opName = "STY";
+            this.sizeBytes = 0x03;
+            this.addressingMode = OpCodes.ModeAbsolute;
+            this.opCode = 0x8c;
+        }
+        StoreYRegisterAbsolute.prototype.decompile = function (address, bytes) {
+            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        };
+
+        StoreYRegisterAbsolute.prototype.execute = function (cpu) {
+            var targetAddress = cpu.addrPopWord();
+            cpu.poke(targetAddress, cpu.rY);
+        };
+        return StoreYRegisterAbsolute;
+    })();
+    Emulator.StoreYRegisterAbsolute = StoreYRegisterAbsolute;
+
+    registeredOperations.push(StoreYRegisterAbsolute);
+
     var SubtractWithCarryImmediate = (function () {
         function SubtractWithCarryImmediate() {
             this.opName = "SBC";
@@ -1236,4 +1382,3 @@ var Emulator;
 
     registeredOperations.push(TransferYToAccumulatorSingle);
 })(Emulator || (Emulator = {}));
-//@ sourceMappingURL=opCodes.js.map

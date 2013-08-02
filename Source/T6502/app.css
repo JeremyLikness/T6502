@@ -27,14 +27,14 @@ td
 textarea 
 {
     text-align: left;
-    width: 400px;
-    height: 400px;    
+    width: 500px;
+    height: 400px;   
 }
 
 div.column 
 {
     float: left;
-    padding-right: 10px;   
+    padding-right: 10px;     
 }
 
 div.console 
@@ -45,7 +45,7 @@ div.console
     background: black;
     color: cyan;
     width: 400px;
-    height: 200px;
+    height: 400px;
     text-wrap: normal;
     padding: 2px;
 }

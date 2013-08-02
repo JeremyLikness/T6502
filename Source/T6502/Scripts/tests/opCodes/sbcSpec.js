@@ -326,6 +326,26 @@ var Tests;
         });
 
         describe("SBC Immediate", function () {
+            var testSuite = function (test, decimalFlag) {
+                describe(given(test), function () {
+                    beforeEach(function () {
+                        cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, decimalFlag);
+                        cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, test.carryFlag);
+                        cpu.rA = test.accumulator;
+                        cpu.poke(cpu.rPC, test.immediate);
+                        operation.execute(cpu);
+                    });
+
+                    it(then(test), function () {
+                        expect(cpu.rA).toBe(test.expectedResult);
+                        expect(cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)).toBe(test.expectedCarry);
+                        expect(cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)).toBe(test.expectedNegative);
+                        expect(cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)).toBe(test.expectedOverflow);
+                        expect(cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)).toBe(test.expectedZero);
+                    });
+                });
+            };
+
             beforeEach(function () {
                 operation = new Emulator.SubtractWithCarryImmediate();
                 cpu.rP = 0x0;
@@ -336,51 +356,14 @@ var Tests;
             describe("given binary mode", function () {
                 for (idx = 0; idx < nonDecimalTests.length; idx++) {
                     var testItem = nonDecimalTests[idx];
-
-                    ((function (test) {
-                        describe(given(test), function () {
-                            beforeEach(function () {
-                                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, test.carryFlag);
-                                cpu.rA = test.accumulator;
-                                cpu.poke(cpu.rPC, test.immediate);
-                                operation.execute(cpu);
-                            });
-
-                            it(then(test), function () {
-                                expect(cpu.rA).toBe(test.expectedResult);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)).toBe(test.expectedCarry);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)).toBe(test.expectedNegative);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)).toBe(test.expectedOverflow);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)).toBe(test.expectedZero);
-                            });
-                        });
-                    })(testItem));
+                    testSuite(testItem, false);
                 }
             });
 
             describe("given decimal mode", function () {
                 for (idx = 0; idx < decimalTests.length; idx++) {
                     var testItem = decimalTests[idx];
-
-                    ((function (test) {
-                        describe(given(test), function () {
-                            beforeEach(function () {
-                                cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, true);
-                                cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, test.carryFlag);
-                                cpu.rA = test.accumulator;
-                                cpu.poke(cpu.rPC, test.immediate);
-                                operation.execute(cpu);
-                            });
-
-                            it(then(test), function () {
-                                expect(cpu.rA).toBe(test.expectedResult);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)).toBe(test.expectedCarry);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)).toBe(test.expectedNegative);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)).toBe(test.expectedOverflow);
-                                expect(cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)).toBe(test.expectedZero);
-                            });
-                        });
-                    })(testItem));
+                    testSuite(testItem, true);
                 }
             });
         });

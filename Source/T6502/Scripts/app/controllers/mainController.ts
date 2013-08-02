@@ -10,10 +10,13 @@ module Main {
         cpu: Emulator.ICpu;
         pc: string;
         compilerInfo: string;
+        source: string[];
+        selectedSource: string; 
         decompile: () => void; 
         dump: () => void;  
         compile: () => void;    
         setPc: () => void; 
+        loadSource: () => void;
     }
 
     export class MainController {
@@ -34,9 +37,14 @@ module Main {
             $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
 
-            $http.get("Source/palette_scroll.txt").then(result => {
-                this.$scope.compilerInfo = result.data;
-            });
+            $scope.source = ["palette scroll", "sierpinski", "testdecimal", "testoverflow"];
+            $scope.selectedSource = $scope.source[0];
+
+            $scope.loadSource = () => {
+                $http.get("Source/" + $scope.selectedSource.replace(" ", "_") + ".txt").then(result => {
+                    this.$scope.compilerInfo = result.data;
+                });
+            };
 
             $scope.setPc = () => {
                 this.$scope.cpu.rPC = parseInt(this.$scope.pc, 16);

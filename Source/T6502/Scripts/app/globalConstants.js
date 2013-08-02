@@ -57,4 +57,3 @@ var Constants;
     })();
     Constants.ProcessorStatus = ProcessorStatus;
 })(Constants || (Constants = {}));
-//@ sourceMappingURL=globalConstants.js.map

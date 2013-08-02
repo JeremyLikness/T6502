@@ -1,8 +1,6 @@
 ﻿; sierpenski triangle
 ; adapted from source code posted by "anonymous" at http://6502asm.com/ 
 
-start
-
 * = $fbe1
 videoStart:
 
