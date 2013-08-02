@@ -11,6 +11,8 @@ module Emulator {
         addrIndirect(): number;
         addrIndexedIndirectX(): number;
         addrIndirectIndexedY(): number;
+        addrZeroPageX(): number;
+        addrZeroPageY(): number;
     }
 
     export interface ICpu extends IOpcodeSupport {
@@ -370,6 +372,16 @@ module Emulator {
             var target: number = this.peek(zeroPage) + (this.peek(zeroPage + 1) << Constants.Memory.BitsInByte)
                 + this.rY; 
             return target;
+        }
+
+        public addrZeroPageX(): number {
+            var zeroPage: number = (this.addrPop() + this.rX) & Constants.Memory.ByteMask;
+            return zeroPage;
+        }
+
+        public addrZeroPageY(): number {
+            var zeroPage: number = (this.addrPop() + this.rY) & Constants.Memory.ByteMask;
+            return zeroPage;
         }
 
         getOperation(value: number): IOperation {

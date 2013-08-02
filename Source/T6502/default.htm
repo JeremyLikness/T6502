@@ -24,15 +24,17 @@
 </head>
 <body data-ng-cloak="" data-ng-app="app">
     <div id="content" data-ng-controller="MainCtrl">
-        <h1>{{title}}</h1>
+        <h1>{{title}}</h1>Jump to:&nbsp;
+        <a href="opcodetests.htm">Op Code Specs</a> |
+        <a href="compilertests.htm">Compiler Specs</a> |
+        <a href="tests.htm">Main Specs</a>
+        <div>&nbsp;</div>
+        <div class="column"><console></console></div>
         <div class="column">
-            <button data-ng-click="cpu.reset()">Reset</button>&nbsp;
-            <button data-ng-click="cpu.halt()" data-ng-enabled="cpu.runningState" data-ng-disabled="cpu.errorState || !cpu.runningState">Halt</button>
-            <button data-ng-click="cpu.stop()" data-ng-enabled="cpu.runningState" data-ng-disabled="cpu.errorState || !cpu.runningState">Pause</button>        
-            <button data-ng-click="cpu.run()" data-ng-enabled="!cpu.runningState && !cpu.errorState" data-ng-disabled="cpu.runningState || cpu.errorState">Run</button>
-            <input type="checkbox" data-ng-model="cpu.autoRefresh"/>Refresh&nbsp;
-            <input type="checkbox" data-ng-model="cpu.debug"/>Debug
-            <button data-ng-click="cpu.step()" data-ng-enabled="!cpu.runningState && !cpu.errorState && cpu.debug" data-ng-disabled="cpu.runningState || cpu.errorState || !cpu.debug">Step</button>
+            <div style="width: 200px;">&nbsp;</div>
+            <display></display>
+        </div>
+        <div class="column">
             <table>
                 <tr><th>PC</th><th>SP</th><th>A</th><th>X</th><th>Y</th><td>NV-BDIZC</td><th>Runtime</th><th>IPS</th></tr>
                 <tr>
@@ -45,14 +47,16 @@
                     <td>{{cpu.elapsedMilliseconds / 1000 | number:3}}</td>               
                     <td>{{cpu.instructionsPerSecond}}</td>               
                 </tr>
-            </table>
-            <console/>
-        </div>
-        <div class="column">
-            <div style="width: 200px;">&nbsp;</div>
-            <display/>
-        </div>
-        <div class="column">
+            </table>            
+            <div>&nbsp;</div>
+            <button data-ng-click="cpu.reset()">Reset</button>&nbsp;
+            <button data-ng-click="cpu.halt()" data-ng-enabled="cpu.runningState" data-ng-disabled="cpu.errorState || !cpu.runningState">Halt</button>
+            <button data-ng-click="cpu.stop()" data-ng-enabled="cpu.runningState" data-ng-disabled="cpu.errorState || !cpu.runningState">Pause</button>        
+            <button data-ng-click="cpu.run()" data-ng-enabled="!cpu.runningState && !cpu.errorState" data-ng-disabled="cpu.runningState || cpu.errorState">Run</button>
+            <input type="checkbox" data-ng-model="cpu.autoRefresh"/>Refresh&nbsp;
+            <input type="checkbox" data-ng-model="cpu.debug"/>Debug
+            <button data-ng-click="cpu.step()" data-ng-enabled="!cpu.runningState && !cpu.errorState && cpu.debug" data-ng-disabled="cpu.runningState || cpu.errorState || !cpu.debug">Step</button>
+            <div>&nbsp;</div>
             <form name="compileForm">                
                 <div>
                     <span>PC: $</span><input id="programStart" name="programStart" type="text" placeholder="{{cpu.rPC | hexadecimal}}" data-ng-model="pc" hexadecimal/>
@@ -64,9 +68,14 @@
                 <div>
                     <span style="color: red;" data-ng-show="compileForm.programStart.$error.hexadecimal">Enter a valid hexadecimal address between 0 and FFFF.&nbsp;</span>                    
                 </div>
+                <div>&nbsp;</div>
+                <div>Source: <select data-ng-model="selectedSource" data-ng-options="src as src for src in source"></select>&nbsp;
+                    <button data-ng-click="loadSource()">Load</button>
+                </div>
+                <div>&nbsp;</div>
                 <textarea data-ng-model="compilerInfo"></textarea>
             </form>
-        </div>
+        </div>        
     </div>
 </body>
 </html>

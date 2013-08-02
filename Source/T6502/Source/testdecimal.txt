@@ -32,7 +32,7 @@ LOOP1:   LDA N2    ; N2L = N2 & $0F
         AND #$F0  ; [2] see text
         STA N2H
         ORA #$0F  ; N2H+1 = (N2 & $F0) + $0F
-        STA N2H+1
+        STA N2HI1
 LOOP2:   LDA N1    ; N1L = N1 & $0F
         AND #$0F  ; [3] see text
         STA N1L
@@ -283,3 +283,4 @@ NF: RTS
 VF: RTS 
 ZF: RTS
 N2H: RTS
+N2HI1: RTS

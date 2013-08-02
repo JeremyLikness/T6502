@@ -14,9 +14,14 @@ var Main;
             $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
 
-            $http.get("Source/palette_scroll.txt").then(function (result) {
-                _this.$scope.compilerInfo = result.data;
-            });
+            $scope.source = ["palette scroll", "sierpinski", "testdecimal", "testoverflow"];
+            $scope.selectedSource = $scope.source[0];
+
+            $scope.loadSource = function () {
+                $http.get("Source/" + $scope.selectedSource.replace(" ", "_") + ".txt").then(function (result) {
+                    _this.$scope.compilerInfo = result.data;
+                });
+            };
 
             $scope.setPc = function () {
                 _this.$scope.cpu.rPC = parseInt(_this.$scope.pc, 16);
