@@ -232,15 +232,11 @@ var Emulator;
         };
 
         Cpu.prototype.compareWithFlags = function (registerValue, value) {
-            var result = registerValue + value;
-
-            if (result > Constants.Memory.ByteMask) {
-                this.rP |= Constants.ProcessorStatus.CarryFlagSet;
-            } else {
-                this.rP &= Constants.ProcessorStatus.CarryFlagReset;
-            }
-
-            this.setFlags(registerValue - value);
+            var temp, offset;
+            offset = Constants.Memory.ByteMask + registerValue - value + 1;
+            this.setFlag(Constants.ProcessorStatus.CarryFlagSet, offset >= 0x100);
+            temp = offset & Constants.Memory.ByteMask;
+            this.setFlags(temp);
         };
 
         Cpu.prototype.addrAbsoluteX = function () {

@@ -68,5 +68,73 @@ module Tests {
                 });
             });            
         });
+
+        describe("PHP - Push Processor Status to Stack", () => {
+            beforeEach(() => {
+                operation = new Emulator.PushProcessorStatusSingle();                
+            });
+
+            describe("given processor status", () => {
+                beforeEach(() => {
+                    cpu.rP = parseInt("10101010", 2);
+                    operation.execute(cpu);
+                }); 
+
+                it("then should push the value to the stack", () => {
+                    expect(cpu.stackPop()).toBe(parseInt("10101010", 2));
+                });
+            });            
+        });
+
+        describe("PLP - Pull Processor Status from Stack", () => {
+            beforeEach(() => {
+                operation = new Emulator.PullProcessorStatusSingle();
+            });
+
+            describe("given value in stack", () => {
+                beforeEach(() => {
+                    cpu.stackPush(parseInt("10101010", 2));
+                    operation.execute(cpu);
+                }); 
+
+                it("then should set the processor status to the value at the top of the stack", () => {
+                    expect(cpu.rP).toBe(parseInt("10101010", 2));
+                });
+            });            
+        });
+
+        describe("TXS - Transfer X Register to Stack Pointer", () => {
+            beforeEach(() => {
+                operation = new Emulator.TransferXRegisterToStackPointerSingle();
+            });
+
+            describe("given value in x-register", () => {
+                beforeEach(() => {
+                    cpu.rX = 0x12;
+                    operation.execute(cpu);
+                }); 
+
+                it("then should update the stack pointer to match the value", () => {
+                    expect(cpu.rSP).toBe(0x12);
+                });
+            });            
+        });
+
+        describe("TSX - Transfer Stack Pointer to X Register", () => {
+            beforeEach(() => {
+                operation = new Emulator.TransferStackPointerToXRegisterSingle();
+            });
+
+            describe("given value in stack pointer", () => {
+                beforeEach(() => {
+                    cpu.rSP = 0x12;
+                    operation.execute(cpu);
+                }); 
+
+                it("then should transfer the value to the X register", () => {
+                    expect(cpu.rX).toBe(0x12);
+                });
+            });            
+        });
     });
 }

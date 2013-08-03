@@ -19,12 +19,6 @@ var Tests;
         var reverseFlag;
         var address;
 
-        function toHexAddress(address) {
-            var padding = "0000";
-            var result = padding + address.toString(16);
-            return result.substring(result.length - 4, result.length).toUpperCase();
-        }
-
         function setText() {
             return reverseFlag ? "not branch" : "branch";
         }

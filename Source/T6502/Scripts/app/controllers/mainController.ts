@@ -37,7 +37,7 @@ module Main {
             $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
 
-            $scope.source = ["palette scroll", "sierpinski", "testdecimal", "testoverflow"];
+            $scope.source = ["palette scroll", "sierpinski", "testcomparisons", "testdecimal", "testoverflow"];
             $scope.selectedSource = $scope.source[0];
 
             $scope.loadSource = () => {

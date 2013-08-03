@@ -20,7 +20,7 @@
 ; This program takes approximately 1 minute at 1 MHz (a few seconds more on
 ; a 65C02 than a 6502 or 65816)
 ;
-TEST:   LDY #1    ; initialize Y (used to loop through carry flag values)
+TEST:    LDY #1    ; initialize Y (used to loop through carry flag values)
         STY ERROR ; store 1 in ERROR until the test passes
         LDA #0    ; initialize N1 and N2
         STA N1
@@ -32,7 +32,7 @@ LOOP1:   LDA N2    ; N2L = N2 & $0F
         AND #$F0  ; [2] see text
         STA N2H
         ORA #$0F  ; N2H+1 = (N2 & $F0) + $0F
-        STA N2HI1
+        STA N2HPLUS1
 LOOP2:   LDA N1    ; N1L = N1 & $0F
         AND #$0F  ; [3] see text
         STA N1L
@@ -56,7 +56,7 @@ LOOP2:   LDA N1    ; N1L = N1 & $0F
         LDA #0    ; test passed, so store 0 in ERROR
         STA ERROR
 DONE:   LDA ERROR 
-        RTS 
+        RTS
 
 ; Calculate the actual decimal mode accumulator and flags, the accumulator
 ; and flag results when N1 is added to N2 using binary arithmetic, the
@@ -266,21 +266,20 @@ S65816:  JSR SUB1
         STA VF
         STA CF
         RTS
-
-AR: RTS
-CF: RTS
-DA: RTS
-DNVZC: RTS
-ERROR: RTS
-HA: RTS
-HNVZC: RTS
-N1: RTS
-N1H: RTS
-N1L: RTS
-N2: RTS
-N2L: RTS 
-NF: RTS 
-VF: RTS 
-ZF: RTS
-N2H: RTS
-N2HI1: RTS
+ERROR: NOP
+N1: NOP
+N1L: NOP
+N1H: NOP
+N2: NOP
+N2L: NOP
+N2H: NOP 
+N2HPLUS1: NOP
+DA: NOP
+DNVZC: NOP
+HA: NOP
+HNVZC: NOP
+AR: NOP
+CF: NOP
+VF: NOP
+NF: NOP
+ZF: NOP

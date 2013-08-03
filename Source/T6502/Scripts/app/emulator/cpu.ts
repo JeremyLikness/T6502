@@ -335,17 +335,12 @@ module Emulator {
         }
 
         compareWithFlags(registerValue: number, value: number): void {
-            var result: number = registerValue + value; 
-
-            if (result > Constants.Memory.ByteMask) {
-                this.rP |= Constants.ProcessorStatus.CarryFlagSet;
-            }
-            else {
-                this.rP &= Constants.ProcessorStatus.CarryFlagReset;
-            }
-
-            this.setFlags(registerValue - value);
-        }
+            var temp: number, offset: number;
+            offset = Constants.Memory.ByteMask + registerValue - value + 1;
+            this.setFlag(Constants.ProcessorStatus.CarryFlagSet, offset >= 0x100);
+            temp = offset & Constants.Memory.ByteMask; 
+            this.setFlags(temp);
+        }        
 
         public addrAbsoluteX(): number {
             return (this.addrPopWord() + this.rX) & Constants.Memory.Max;

@@ -21,12 +21,6 @@ module Tests {
         var reverseFlag: boolean; 
         var address: number;
 
-        function toHexAddress(address: number) {
-            var padding: string = "0000";
-            var result: string = padding + address.toString(16);
-            return result.substring(result.length - 4, result.length).toUpperCase();                
-        }
-
         function setText(): string {
             return reverseFlag ? "not branch" : "branch"; 
         }

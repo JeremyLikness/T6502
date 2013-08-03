@@ -357,6 +357,104 @@ var Emulator;
     Emulator.AndImmediate = AndImmediate;
     registeredOperations.push(AndImmediate);
 
+    var AndZeroPage = (function (_super) {
+        __extends(AndZeroPage, _super);
+        function AndZeroPage() {
+            _super.call(this, "AND", 0x02, OpCodes.ModeZeroPage, 0x25);
+        }
+        AndZeroPage.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrPop());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndZeroPage;
+    })(BaseOpCode);
+    Emulator.AndZeroPage = AndZeroPage;
+    registeredOperations.push(AndZeroPage);
+
+    var AndZeroPageX = (function (_super) {
+        __extends(AndZeroPageX, _super);
+        function AndZeroPageX() {
+            _super.call(this, "AND", 0x02, OpCodes.ModeZeroPageX, 0x35);
+        }
+        AndZeroPageX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrZeroPageX());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndZeroPageX;
+    })(BaseOpCode);
+    Emulator.AndZeroPageX = AndZeroPageX;
+    registeredOperations.push(AndZeroPageX);
+
+    var AndAbsolute = (function (_super) {
+        __extends(AndAbsolute, _super);
+        function AndAbsolute() {
+            _super.call(this, "AND", 0x03, OpCodes.ModeAbsolute, 0x2D);
+        }
+        AndAbsolute.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrPopWord());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndAbsolute;
+    })(BaseOpCode);
+    Emulator.AndAbsolute = AndAbsolute;
+    registeredOperations.push(AndAbsolute);
+
+    var AndAbsoluteX = (function (_super) {
+        __extends(AndAbsoluteX, _super);
+        function AndAbsoluteX() {
+            _super.call(this, "AND", 0x03, OpCodes.ModeAbsoluteX, 0x3D);
+        }
+        AndAbsoluteX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrAbsoluteX());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndAbsoluteX;
+    })(BaseOpCode);
+    Emulator.AndAbsoluteX = AndAbsoluteX;
+    registeredOperations.push(AndAbsoluteX);
+
+    var AndAbsoluteY = (function (_super) {
+        __extends(AndAbsoluteY, _super);
+        function AndAbsoluteY() {
+            _super.call(this, "AND", 0x03, OpCodes.ModeAbsoluteY, 0x39);
+        }
+        AndAbsoluteY.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrAbsoluteY());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndAbsoluteY;
+    })(BaseOpCode);
+    Emulator.AndAbsoluteY = AndAbsoluteY;
+    registeredOperations.push(AndAbsoluteY);
+
+    var AndIndirectX = (function (_super) {
+        __extends(AndIndirectX, _super);
+        function AndIndirectX() {
+            _super.call(this, "AND", 0x02, OpCodes.ModeIndexedIndirectX, 0x21);
+        }
+        AndIndirectX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrIndexedIndirectX());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndIndirectX;
+    })(BaseOpCode);
+    Emulator.AndIndirectX = AndIndirectX;
+    registeredOperations.push(AndIndirectX);
+
+    var AndIndirectY = (function (_super) {
+        __extends(AndIndirectY, _super);
+        function AndIndirectY() {
+            _super.call(this, "AND", 0x02, OpCodes.ModeIndexedIndirectY, 0x31);
+        }
+        AndIndirectY.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA & cpu.peek(cpu.addrIndirectIndexedY());
+            cpu.setFlags(cpu.rA);
+        };
+        return AndIndirectY;
+    })(BaseOpCode);
+    Emulator.AndIndirectY = AndIndirectY;
+    registeredOperations.push(AndIndirectY);
+
     var BranchNotEqualRelative = (function (_super) {
         __extends(BranchNotEqualRelative, _super);
         function BranchNotEqualRelative() {
@@ -373,17 +471,11 @@ var Emulator;
     Emulator.BranchNotEqualRelative = BranchNotEqualRelative;
     registeredOperations.push(BranchNotEqualRelative);
 
-    var BranchEqualRelative = (function () {
+    var BranchEqualRelative = (function (_super) {
+        __extends(BranchEqualRelative, _super);
         function BranchEqualRelative() {
-            this.opName = "BEQ";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0xf0;
+            _super.call(this, "BEQ", 0x02, OpCodes.ModeRelative, 0xF0);
         }
-        BranchEqualRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchEqualRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (cpu.checkFlag(Constants.ProcessorStatus.ZeroFlagSet)) {
@@ -391,22 +483,15 @@ var Emulator;
             }
         };
         return BranchEqualRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchEqualRelative = BranchEqualRelative;
-
     registeredOperations.push(BranchEqualRelative);
 
-    var BranchMinusRelative = (function () {
+    var BranchMinusRelative = (function (_super) {
+        __extends(BranchMinusRelative, _super);
         function BranchMinusRelative() {
-            this.opName = "BMI";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0x30;
+            _super.call(this, "BMI", 0x02, OpCodes.ModeRelative, 0x30);
         }
-        BranchMinusRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchMinusRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)) {
@@ -414,22 +499,15 @@ var Emulator;
             }
         };
         return BranchMinusRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchMinusRelative = BranchMinusRelative;
-
     registeredOperations.push(BranchMinusRelative);
 
-    var BranchPlusRelative = (function () {
+    var BranchPlusRelative = (function (_super) {
+        __extends(BranchPlusRelative, _super);
         function BranchPlusRelative() {
-            this.opName = "BPL";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0x10;
+            _super.call(this, "BPL", 0x02, OpCodes.ModeRelative, 0x10);
         }
-        BranchPlusRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchPlusRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (!cpu.checkFlag(Constants.ProcessorStatus.NegativeFlagSet)) {
@@ -437,22 +515,15 @@ var Emulator;
             }
         };
         return BranchPlusRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchPlusRelative = BranchPlusRelative;
-
     registeredOperations.push(BranchPlusRelative);
 
-    var BranchOverflowClearRelative = (function () {
+    var BranchOverflowClearRelative = (function (_super) {
+        __extends(BranchOverflowClearRelative, _super);
         function BranchOverflowClearRelative() {
-            this.opName = "BVC";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0x50;
+            _super.call(this, "BVC", 0x02, OpCodes.ModeRelative, 0x50);
         }
-        BranchOverflowClearRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchOverflowClearRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (!cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)) {
@@ -460,22 +531,15 @@ var Emulator;
             }
         };
         return BranchOverflowClearRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchOverflowClearRelative = BranchOverflowClearRelative;
-
     registeredOperations.push(BranchOverflowClearRelative);
 
-    var BranchOverflowSetRelative = (function () {
+    var BranchOverflowSetRelative = (function (_super) {
+        __extends(BranchOverflowSetRelative, _super);
         function BranchOverflowSetRelative() {
-            this.opName = "BVS";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0x70;
+            _super.call(this, "BVS", 0x02, OpCodes.ModeRelative, 0x70);
         }
-        BranchOverflowSetRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchOverflowSetRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (cpu.checkFlag(Constants.ProcessorStatus.OverflowFlagSet)) {
@@ -483,22 +547,15 @@ var Emulator;
             }
         };
         return BranchOverflowSetRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchOverflowSetRelative = BranchOverflowSetRelative;
-
     registeredOperations.push(BranchOverflowSetRelative);
 
-    var BranchCarryClearRelative = (function () {
+    var BranchCarryClearRelative = (function (_super) {
+        __extends(BranchCarryClearRelative, _super);
         function BranchCarryClearRelative() {
-            this.opName = "BCC";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0x90;
+            _super.call(this, "BCC", 0x02, OpCodes.ModeRelative, 0x90);
         }
-        BranchCarryClearRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchCarryClearRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (!cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)) {
@@ -506,22 +563,15 @@ var Emulator;
             }
         };
         return BranchCarryClearRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchCarryClearRelative = BranchCarryClearRelative;
-
     registeredOperations.push(BranchCarryClearRelative);
 
-    var BranchCarrySetRelative = (function () {
+    var BranchCarrySetRelative = (function (_super) {
+        __extends(BranchCarrySetRelative, _super);
         function BranchCarrySetRelative() {
-            this.opName = "BCS";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeRelative;
-            this.opCode = 0xB0;
+            _super.call(this, "BCS", 0x02, OpCodes.ModeRelative, 0xB0);
         }
-        BranchCarrySetRelative.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(OpCodes.computeBranch(address + 2, bytes[1])));
-        };
-
         BranchCarrySetRelative.prototype.execute = function (cpu) {
             var branch = cpu.addrPop();
             if (cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)) {
@@ -529,90 +579,201 @@ var Emulator;
             }
         };
         return BranchCarrySetRelative;
-    })();
+    })(BaseOpCode);
     Emulator.BranchCarrySetRelative = BranchCarrySetRelative;
-
     registeredOperations.push(BranchCarrySetRelative);
 
-    var ClearDecimalSingle = (function () {
-        function ClearDecimalSingle() {
-            this.opName = "CLD";
-            this.sizeBytes = 0x01;
-            this.addressingMode = OpCodes.ModeSingle;
-            this.opCode = 0xD8;
-        }
-        ClearDecimalSingle.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
-        };
-
-        ClearDecimalSingle.prototype.execute = function (cpu) {
-            cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, false);
-        };
-        return ClearDecimalSingle;
-    })();
-    Emulator.ClearDecimalSingle = ClearDecimalSingle;
-
-    registeredOperations.push(ClearDecimalSingle);
-
-    var CompareAccumulatorImmediate = (function () {
+    var CompareAccumulatorImmediate = (function (_super) {
+        __extends(CompareAccumulatorImmediate, _super);
         function CompareAccumulatorImmediate() {
-            this.opName = "CMP";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeImmediate;
-            this.opCode = 0xc9;
+            _super.call(this, "CMP", 0x02, OpCodes.ModeImmediate, 0xC9);
         }
-        CompareAccumulatorImmediate.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
-        };
-
         CompareAccumulatorImmediate.prototype.execute = function (cpu) {
             cpu.compareWithFlags(cpu.rA, cpu.addrPop());
         };
         return CompareAccumulatorImmediate;
-    })();
+    })(BaseOpCode);
     Emulator.CompareAccumulatorImmediate = CompareAccumulatorImmediate;
-
     registeredOperations.push(CompareAccumulatorImmediate);
 
-    var CompareXImmediate = (function () {
-        function CompareXImmediate() {
-            this.opName = "CPX";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeImmediate;
-            this.opCode = 0xe0;
+    var CompareAccumulatorZeroPage = (function (_super) {
+        __extends(CompareAccumulatorZeroPage, _super);
+        function CompareAccumulatorZeroPage() {
+            _super.call(this, "CMP", 0x02, OpCodes.ModeZeroPage, 0xC5);
         }
-        CompareXImmediate.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        CompareAccumulatorZeroPage.prototype.execute = function (cpu) {
+            var zeroPage = cpu.addrPop();
+            cpu.compareWithFlags(cpu.rA, cpu.peek(zeroPage));
         };
+        return CompareAccumulatorZeroPage;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorZeroPage = CompareAccumulatorZeroPage;
+    registeredOperations.push(CompareAccumulatorZeroPage);
 
+    var CompareAccumulatorZeroPageX = (function (_super) {
+        __extends(CompareAccumulatorZeroPageX, _super);
+        function CompareAccumulatorZeroPageX() {
+            _super.call(this, "CMP", 0x02, OpCodes.ModeZeroPageX, 0xD5);
+        }
+        CompareAccumulatorZeroPageX.prototype.execute = function (cpu) {
+            cpu.compareWithFlags(cpu.rA, cpu.peek(cpu.addrZeroPageX()));
+        };
+        return CompareAccumulatorZeroPageX;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorZeroPageX = CompareAccumulatorZeroPageX;
+    registeredOperations.push(CompareAccumulatorZeroPageX);
+
+    var CompareAccumulatorAbsolute = (function (_super) {
+        __extends(CompareAccumulatorAbsolute, _super);
+        function CompareAccumulatorAbsolute() {
+            _super.call(this, "CMP", 0x03, OpCodes.ModeAbsolute, 0xCD);
+        }
+        CompareAccumulatorAbsolute.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrPopWord());
+            cpu.compareWithFlags(cpu.rA, targetValue);
+        };
+        return CompareAccumulatorAbsolute;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorAbsolute = CompareAccumulatorAbsolute;
+    registeredOperations.push(CompareAccumulatorAbsolute);
+
+    var CompareAccumulatorAbsoluteX = (function (_super) {
+        __extends(CompareAccumulatorAbsoluteX, _super);
+        function CompareAccumulatorAbsoluteX() {
+            _super.call(this, "CMP", 0x03, OpCodes.ModeAbsoluteX, 0xDD);
+        }
+        CompareAccumulatorAbsoluteX.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrAbsoluteX());
+            cpu.compareWithFlags(cpu.rA, targetValue);
+        };
+        return CompareAccumulatorAbsoluteX;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorAbsoluteX = CompareAccumulatorAbsoluteX;
+    registeredOperations.push(CompareAccumulatorAbsoluteX);
+
+    var CompareAccumulatorAbsoluteY = (function (_super) {
+        __extends(CompareAccumulatorAbsoluteY, _super);
+        function CompareAccumulatorAbsoluteY() {
+            _super.call(this, "CMP", 0x03, OpCodes.ModeAbsoluteY, 0xD9);
+        }
+        CompareAccumulatorAbsoluteY.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrAbsoluteY());
+            cpu.compareWithFlags(cpu.rA, targetValue);
+        };
+        return CompareAccumulatorAbsoluteY;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorAbsoluteY = CompareAccumulatorAbsoluteY;
+    registeredOperations.push(CompareAccumulatorAbsoluteY);
+
+    var CompareAccumulatorIndexedIndirectX = (function (_super) {
+        __extends(CompareAccumulatorIndexedIndirectX, _super);
+        function CompareAccumulatorIndexedIndirectX() {
+            _super.call(this, "CMP", 0x02, OpCodes.ModeIndexedIndirectX, 0xC1);
+        }
+        CompareAccumulatorIndexedIndirectX.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrIndexedIndirectX());
+            cpu.compareWithFlags(cpu.rA, targetValue);
+        };
+        return CompareAccumulatorIndexedIndirectX;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorIndexedIndirectX = CompareAccumulatorIndexedIndirectX;
+    registeredOperations.push(CompareAccumulatorIndexedIndirectX);
+
+    var CompareAccumulatorIndirectIndexedY = (function (_super) {
+        __extends(CompareAccumulatorIndirectIndexedY, _super);
+        function CompareAccumulatorIndirectIndexedY() {
+            _super.call(this, "CMP", 0x02, OpCodes.ModeIndexedIndirectY, 0xD1);
+        }
+        CompareAccumulatorIndirectIndexedY.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrIndirectIndexedY());
+            cpu.compareWithFlags(cpu.rA, targetValue);
+        };
+        return CompareAccumulatorIndirectIndexedY;
+    })(BaseOpCode);
+    Emulator.CompareAccumulatorIndirectIndexedY = CompareAccumulatorIndirectIndexedY;
+    registeredOperations.push(CompareAccumulatorIndirectIndexedY);
+
+    var CompareXImmediate = (function (_super) {
+        __extends(CompareXImmediate, _super);
+        function CompareXImmediate() {
+            _super.call(this, "CPX", 0x02, OpCodes.ModeImmediate, 0xE0);
+        }
         CompareXImmediate.prototype.execute = function (cpu) {
             cpu.compareWithFlags(cpu.rX, cpu.addrPop());
         };
         return CompareXImmediate;
-    })();
+    })(BaseOpCode);
     Emulator.CompareXImmediate = CompareXImmediate;
-
     registeredOperations.push(CompareXImmediate);
 
-    var CompareYImmediate = (function () {
-        function CompareYImmediate() {
-            this.opName = "CPY";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeImmediate;
-            this.opCode = 0xC0;
+    var CompareXZeroPage = (function (_super) {
+        __extends(CompareXZeroPage, _super);
+        function CompareXZeroPage() {
+            _super.call(this, "CPX", 0x02, OpCodes.ModeZeroPage, 0xE4);
         }
-        CompareYImmediate.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
+        CompareXZeroPage.prototype.execute = function (cpu) {
+            var zeroPage = cpu.addrPop();
+            cpu.compareWithFlags(cpu.rX, cpu.peek(zeroPage));
         };
+        return CompareXZeroPage;
+    })(BaseOpCode);
+    Emulator.CompareXZeroPage = CompareXZeroPage;
+    registeredOperations.push(CompareXZeroPage);
 
+    var CompareXAbsolute = (function (_super) {
+        __extends(CompareXAbsolute, _super);
+        function CompareXAbsolute() {
+            _super.call(this, "CPX", 0x03, OpCodes.ModeAbsolute, 0xEC);
+        }
+        CompareXAbsolute.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrPopWord());
+            cpu.compareWithFlags(cpu.rX, targetValue);
+        };
+        return CompareXAbsolute;
+    })(BaseOpCode);
+    Emulator.CompareXAbsolute = CompareXAbsolute;
+    registeredOperations.push(CompareXAbsolute);
+
+    var CompareYImmediate = (function (_super) {
+        __extends(CompareYImmediate, _super);
+        function CompareYImmediate() {
+            _super.call(this, "CPY", 0x02, OpCodes.ModeImmediate, 0xC0);
+        }
         CompareYImmediate.prototype.execute = function (cpu) {
             cpu.compareWithFlags(cpu.rY, cpu.addrPop());
         };
         return CompareYImmediate;
-    })();
+    })(BaseOpCode);
     Emulator.CompareYImmediate = CompareYImmediate;
-
     registeredOperations.push(CompareYImmediate);
+
+    var CompareYZeroPage = (function (_super) {
+        __extends(CompareYZeroPage, _super);
+        function CompareYZeroPage() {
+            _super.call(this, "CPY", 0x02, OpCodes.ModeZeroPage, 0xC4);
+        }
+        CompareYZeroPage.prototype.execute = function (cpu) {
+            var zeroPage = cpu.addrPop();
+            cpu.compareWithFlags(cpu.rY, cpu.peek(zeroPage));
+        };
+        return CompareYZeroPage;
+    })(BaseOpCode);
+    Emulator.CompareYZeroPage = CompareYZeroPage;
+    registeredOperations.push(CompareYZeroPage);
+
+    var CompareYAbsolute = (function (_super) {
+        __extends(CompareYAbsolute, _super);
+        function CompareYAbsolute() {
+            _super.call(this, "CPY", 0x03, OpCodes.ModeAbsolute, 0xCC);
+        }
+        CompareYAbsolute.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrPopWord());
+            cpu.compareWithFlags(cpu.rY, targetValue);
+        };
+        return CompareYAbsolute;
+    })(BaseOpCode);
+    Emulator.CompareYAbsolute = CompareYAbsolute;
+    registeredOperations.push(CompareYAbsolute);
 
     var DecXSingle = (function () {
         function DecXSingle() {
@@ -662,47 +823,196 @@ var Emulator;
 
     registeredOperations.push(DecYSingle);
 
-    var ExclusiveOrIndirectX = (function () {
-        function ExclusiveOrIndirectX() {
-            this.opName = "EOR";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeIndexedIndirectX;
-            this.opCode = 0x41;
+    var ExclusiveOrImmediate = (function (_super) {
+        __extends(ExclusiveOrImmediate, _super);
+        function ExclusiveOrImmediate() {
+            _super.call(this, "EOR", 0x02, OpCodes.ModeImmediate, 0x49);
         }
-        ExclusiveOrIndirectX.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "($" + OpCodes.ToByte(bytes[1]) + ", X)");
+        ExclusiveOrImmediate.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.addrPop();
+            cpu.setFlags(cpu.rA);
         };
+        return ExclusiveOrImmediate;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrImmediate = ExclusiveOrImmediate;
+    registeredOperations.push(ExclusiveOrImmediate);
 
+    var ExclusiveOrZeroPage = (function (_super) {
+        __extends(ExclusiveOrZeroPage, _super);
+        function ExclusiveOrZeroPage() {
+            _super.call(this, "EOR", 0x02, OpCodes.ModeZeroPage, 0x45);
+        }
+        ExclusiveOrZeroPage.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrPop());
+            cpu.setFlags(cpu.rA);
+        };
+        return ExclusiveOrZeroPage;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrZeroPage = ExclusiveOrZeroPage;
+    registeredOperations.push(ExclusiveOrZeroPage);
+
+    var ExclusiveOrZeroPageX = (function (_super) {
+        __extends(ExclusiveOrZeroPageX, _super);
+        function ExclusiveOrZeroPageX() {
+            _super.call(this, "EOR", 0x02, OpCodes.ModeZeroPageX, 0x55);
+        }
+        ExclusiveOrZeroPageX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrZeroPageX());
+            cpu.setFlags(cpu.rA);
+        };
+        return ExclusiveOrZeroPageX;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrZeroPageX = ExclusiveOrZeroPageX;
+    registeredOperations.push(ExclusiveOrZeroPageX);
+
+    var ExclusiveOrAbsolute = (function (_super) {
+        __extends(ExclusiveOrAbsolute, _super);
+        function ExclusiveOrAbsolute() {
+            _super.call(this, "EOR", 0x03, OpCodes.ModeAbsolute, 0x4D);
+        }
+        ExclusiveOrAbsolute.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrPopWord());
+            cpu.setFlags(cpu.rA);
+        };
+        return ExclusiveOrAbsolute;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrAbsolute = ExclusiveOrAbsolute;
+    registeredOperations.push(ExclusiveOrAbsolute);
+
+    var ExclusiveOrAbsoluteX = (function (_super) {
+        __extends(ExclusiveOrAbsoluteX, _super);
+        function ExclusiveOrAbsoluteX() {
+            _super.call(this, "EOR", 0x03, OpCodes.ModeAbsoluteX, 0x5D);
+        }
+        ExclusiveOrAbsoluteX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrAbsoluteX());
+            cpu.setFlags(cpu.rA);
+        };
+        return ExclusiveOrAbsoluteX;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrAbsoluteX = ExclusiveOrAbsoluteX;
+    registeredOperations.push(ExclusiveOrAbsoluteX);
+
+    var ExclusiveOrAbsoluteY = (function (_super) {
+        __extends(ExclusiveOrAbsoluteY, _super);
+        function ExclusiveOrAbsoluteY() {
+            _super.call(this, "EOR", 0x03, OpCodes.ModeAbsoluteY, 0x59);
+        }
+        ExclusiveOrAbsoluteY.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrAbsoluteY());
+            cpu.setFlags(cpu.rA);
+        };
+        return ExclusiveOrAbsoluteY;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrAbsoluteY = ExclusiveOrAbsoluteY;
+    registeredOperations.push(ExclusiveOrAbsoluteY);
+
+    var ExclusiveOrIndirectX = (function (_super) {
+        __extends(ExclusiveOrIndirectX, _super);
+        function ExclusiveOrIndirectX() {
+            _super.call(this, "EOR", 0x02, OpCodes.ModeIndexedIndirectX, 0x41);
+        }
         ExclusiveOrIndirectX.prototype.execute = function (cpu) {
-            cpu.rA ^= cpu.peek(cpu.addrIndexedIndirectX());
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrIndexedIndirectX());
             cpu.setFlags(cpu.rA);
         };
         return ExclusiveOrIndirectX;
-    })();
+    })(BaseOpCode);
     Emulator.ExclusiveOrIndirectX = ExclusiveOrIndirectX;
-
     registeredOperations.push(ExclusiveOrIndirectX);
 
-    var InvalidOp = (function () {
-        function InvalidOp(value) {
-            this.opName = "???";
-            this.sizeBytes = 0x01;
-            this.addressingMode = OpCodes.ModeSingle;
-            this.opCode = value & Constants.Memory.ByteMask;
+    var ExclusiveOrIndirectY = (function (_super) {
+        __extends(ExclusiveOrIndirectY, _super);
+        function ExclusiveOrIndirectY() {
+            _super.call(this, "EOR", 0x02, OpCodes.ModeIndexedIndirectY, 0x51);
         }
-        InvalidOp.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        ExclusiveOrIndirectY.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA ^ cpu.peek(cpu.addrIndirectIndexedY());
+            cpu.setFlags(cpu.rA);
         };
+        return ExclusiveOrIndirectY;
+    })(BaseOpCode);
+    Emulator.ExclusiveOrIndirectY = ExclusiveOrIndirectY;
+    registeredOperations.push(ExclusiveOrIndirectY);
 
+    var ClearCarrySingle = (function (_super) {
+        __extends(ClearCarrySingle, _super);
+        function ClearCarrySingle() {
+            _super.call(this, "CLC", 0x01, OpCodes.ModeSingle, 0x18);
+        }
+        ClearCarrySingle.prototype.execute = function (cpu) {
+            cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, false);
+        };
+        return ClearCarrySingle;
+    })(BaseOpCode);
+    Emulator.ClearCarrySingle = ClearCarrySingle;
+    registeredOperations.push(ClearCarrySingle);
+
+    var SetCarrySingle = (function (_super) {
+        __extends(SetCarrySingle, _super);
+        function SetCarrySingle() {
+            _super.call(this, "SEC", 0x01, OpCodes.ModeSingle, 0x38);
+        }
+        SetCarrySingle.prototype.execute = function (cpu) {
+            cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, true);
+        };
+        return SetCarrySingle;
+    })(BaseOpCode);
+    Emulator.SetCarrySingle = SetCarrySingle;
+    registeredOperations.push(SetCarrySingle);
+
+    var ClearOverflowSingle = (function (_super) {
+        __extends(ClearOverflowSingle, _super);
+        function ClearOverflowSingle() {
+            _super.call(this, "CLV", 0x01, OpCodes.ModeSingle, 0xB8);
+        }
+        ClearOverflowSingle.prototype.execute = function (cpu) {
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, false);
+        };
+        return ClearOverflowSingle;
+    })(BaseOpCode);
+    Emulator.ClearOverflowSingle = ClearOverflowSingle;
+    registeredOperations.push(ClearOverflowSingle);
+
+    var ClearDecimalSingle = (function (_super) {
+        __extends(ClearDecimalSingle, _super);
+        function ClearDecimalSingle() {
+            _super.call(this, "CLD", 0x01, OpCodes.ModeSingle, 0xD8);
+        }
+        ClearDecimalSingle.prototype.execute = function (cpu) {
+            cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, false);
+        };
+        return ClearDecimalSingle;
+    })(BaseOpCode);
+    Emulator.ClearDecimalSingle = ClearDecimalSingle;
+    registeredOperations.push(ClearDecimalSingle);
+
+    var SetDecimalSingle = (function (_super) {
+        __extends(SetDecimalSingle, _super);
+        function SetDecimalSingle() {
+            _super.call(this, "SED", 0x01, OpCodes.ModeSingle, 0xF8);
+        }
+        SetDecimalSingle.prototype.execute = function (cpu) {
+            cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, true);
+        };
+        return SetDecimalSingle;
+    })(BaseOpCode);
+    Emulator.SetDecimalSingle = SetDecimalSingle;
+    registeredOperations.push(SetDecimalSingle);
+
+    var InvalidOp = (function (_super) {
+        __extends(InvalidOp, _super);
+        function InvalidOp(value) {
+            _super.call(this, "???", 0x01, OpCodes.ModeSingle, value & Constants.Memory.ByteMask);
+        }
         InvalidOp.prototype.execute = function (cpu) {
             var prev = cpu.rPC - 1;
             var opCode = cpu.peek(prev);
             throw "Invalid op code 0x" + opCode.toString(16).toUpperCase() + " encountered at $" + prev.toString(16).toUpperCase();
         };
         return InvalidOp;
-    })();
+    })(BaseOpCode);
     Emulator.InvalidOp = InvalidOp;
-
     var IncAbsolute = (function () {
         function IncAbsolute() {
             this.opName = "INC";
@@ -1073,66 +1383,222 @@ var Emulator;
 
     registeredOperations.push(LoadXRegisterZeroPage);
 
-    var PullAccumulatorSingle = (function () {
-        function PullAccumulatorSingle() {
-            this.opName = "PLA";
-            this.sizeBytes = 0x01;
-            this.addressingMode = OpCodes.ModeSingle;
-            this.opCode = 0x68;
+    var NoOperationSingle = (function (_super) {
+        __extends(NoOperationSingle, _super);
+        function NoOperationSingle() {
+            _super.call(this, "NOP", 0x01, OpCodes.ModeSingle, 0xEA);
         }
-        PullAccumulatorSingle.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        NoOperationSingle.prototype.execute = function (cpu) {
+            return;
         };
+        return NoOperationSingle;
+    })(BaseOpCode);
+    Emulator.NoOperationSingle = NoOperationSingle;
+    registeredOperations.push(NoOperationSingle);
 
+    var OrImmediate = (function (_super) {
+        __extends(OrImmediate, _super);
+        function OrImmediate() {
+            _super.call(this, "ORA", 0x02, OpCodes.ModeImmediate, 0x09);
+        }
+        OrImmediate.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.addrPop();
+            cpu.setFlags(cpu.rA);
+        };
+        return OrImmediate;
+    })(BaseOpCode);
+    Emulator.OrImmediate = OrImmediate;
+    registeredOperations.push(OrImmediate);
+
+    var OrZeroPage = (function (_super) {
+        __extends(OrZeroPage, _super);
+        function OrZeroPage() {
+            _super.call(this, "ORA", 0x02, OpCodes.ModeZeroPage, 0x05);
+        }
+        OrZeroPage.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrPop());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrZeroPage;
+    })(BaseOpCode);
+    Emulator.OrZeroPage = OrZeroPage;
+    registeredOperations.push(OrZeroPage);
+
+    var OrZeroPageX = (function (_super) {
+        __extends(OrZeroPageX, _super);
+        function OrZeroPageX() {
+            _super.call(this, "ORA", 0x02, OpCodes.ModeZeroPageX, 0x15);
+        }
+        OrZeroPageX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrZeroPageX());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrZeroPageX;
+    })(BaseOpCode);
+    Emulator.OrZeroPageX = OrZeroPageX;
+    registeredOperations.push(OrZeroPageX);
+
+    var OrAbsolute = (function (_super) {
+        __extends(OrAbsolute, _super);
+        function OrAbsolute() {
+            _super.call(this, "ORA", 0x03, OpCodes.ModeAbsolute, 0x0D);
+        }
+        OrAbsolute.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrPopWord());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrAbsolute;
+    })(BaseOpCode);
+    Emulator.OrAbsolute = OrAbsolute;
+    registeredOperations.push(OrAbsolute);
+
+    var OrAbsoluteX = (function (_super) {
+        __extends(OrAbsoluteX, _super);
+        function OrAbsoluteX() {
+            _super.call(this, "ORA", 0x03, OpCodes.ModeAbsoluteX, 0x1D);
+        }
+        OrAbsoluteX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrAbsoluteX());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrAbsoluteX;
+    })(BaseOpCode);
+    Emulator.OrAbsoluteX = OrAbsoluteX;
+    registeredOperations.push(OrAbsoluteX);
+
+    var OrAbsoluteY = (function (_super) {
+        __extends(OrAbsoluteY, _super);
+        function OrAbsoluteY() {
+            _super.call(this, "ORA", 0x03, OpCodes.ModeAbsoluteY, 0x19);
+        }
+        OrAbsoluteY.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrAbsoluteY());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrAbsoluteY;
+    })(BaseOpCode);
+    Emulator.OrAbsoluteY = OrAbsoluteY;
+    registeredOperations.push(OrAbsoluteY);
+
+    var OrIndirectX = (function (_super) {
+        __extends(OrIndirectX, _super);
+        function OrIndirectX() {
+            _super.call(this, "ORA", 0x02, OpCodes.ModeIndexedIndirectX, 0x01);
+        }
+        OrIndirectX.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrIndexedIndirectX());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrIndirectX;
+    })(BaseOpCode);
+    Emulator.OrIndirectX = OrIndirectX;
+    registeredOperations.push(OrIndirectX);
+
+    var OrIndirectY = (function (_super) {
+        __extends(OrIndirectY, _super);
+        function OrIndirectY() {
+            _super.call(this, "ORA", 0x02, OpCodes.ModeIndexedIndirectY, 0x11);
+        }
+        OrIndirectY.prototype.execute = function (cpu) {
+            cpu.rA = cpu.rA | cpu.peek(cpu.addrIndirectIndexedY());
+            cpu.setFlags(cpu.rA);
+        };
+        return OrIndirectY;
+    })(BaseOpCode);
+    Emulator.OrIndirectY = OrIndirectY;
+    registeredOperations.push(OrIndirectY);
+
+    var RtsSingle = (function (_super) {
+        __extends(RtsSingle, _super);
+        function RtsSingle() {
+            _super.call(this, "RTS", 0x01, OpCodes.ModeSingle, 0x60);
+        }
+        RtsSingle.prototype.execute = function (cpu) {
+            cpu.stackRts();
+        };
+        return RtsSingle;
+    })(BaseOpCode);
+    Emulator.RtsSingle = RtsSingle;
+    registeredOperations.push(RtsSingle);
+
+    var PullProcessorStatusSingle = (function (_super) {
+        __extends(PullProcessorStatusSingle, _super);
+        function PullProcessorStatusSingle() {
+            _super.call(this, "PLP", 0x01, OpCodes.ModeSingle, 0x28);
+        }
+        PullProcessorStatusSingle.prototype.execute = function (cpu) {
+            cpu.rP = cpu.stackPop();
+        };
+        return PullProcessorStatusSingle;
+    })(BaseOpCode);
+    Emulator.PullProcessorStatusSingle = PullProcessorStatusSingle;
+    registeredOperations.push(PullProcessorStatusSingle);
+
+    var PushProcessorStatusSingle = (function (_super) {
+        __extends(PushProcessorStatusSingle, _super);
+        function PushProcessorStatusSingle() {
+            _super.call(this, "PHP", 0x01, OpCodes.ModeSingle, 0x08);
+        }
+        PushProcessorStatusSingle.prototype.execute = function (cpu) {
+            cpu.stackPush(cpu.rP);
+        };
+        return PushProcessorStatusSingle;
+    })(BaseOpCode);
+    Emulator.PushProcessorStatusSingle = PushProcessorStatusSingle;
+    registeredOperations.push(PushProcessorStatusSingle);
+
+    var PullAccumulatorSingle = (function (_super) {
+        __extends(PullAccumulatorSingle, _super);
+        function PullAccumulatorSingle() {
+            _super.call(this, "PLA", 0x01, OpCodes.ModeSingle, 0x68);
+        }
         PullAccumulatorSingle.prototype.execute = function (cpu) {
             cpu.rA = cpu.stackPop();
             cpu.setFlags(cpu.rA);
         };
         return PullAccumulatorSingle;
-    })();
+    })(BaseOpCode);
     Emulator.PullAccumulatorSingle = PullAccumulatorSingle;
-
     registeredOperations.push(PullAccumulatorSingle);
 
-    var PushAccumulatorSingle = (function () {
+    var PushAccumulatorSingle = (function (_super) {
+        __extends(PushAccumulatorSingle, _super);
         function PushAccumulatorSingle() {
-            this.opName = "PHA";
-            this.sizeBytes = 0x01;
-            this.addressingMode = OpCodes.ModeSingle;
-            this.opCode = 0x48;
+            _super.call(this, "PHA", 0x01, OpCodes.ModeSingle, 0x48);
         }
-        PushAccumulatorSingle.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
-        };
-
         PushAccumulatorSingle.prototype.execute = function (cpu) {
             cpu.stackPush(cpu.rA);
         };
         return PushAccumulatorSingle;
-    })();
+    })(BaseOpCode);
     Emulator.PushAccumulatorSingle = PushAccumulatorSingle;
-
     registeredOperations.push(PushAccumulatorSingle);
 
-    var RtsSingle = (function () {
-        function RtsSingle() {
-            this.opName = "RTS";
-            this.sizeBytes = 0x01;
-            this.addressingMode = OpCodes.ModeSingle;
-            this.opCode = 0x60;
+    var TransferXRegisterToStackPointerSingle = (function (_super) {
+        __extends(TransferXRegisterToStackPointerSingle, _super);
+        function TransferXRegisterToStackPointerSingle() {
+            _super.call(this, "TXS", 0x01, OpCodes.ModeSingle, 0x9A);
         }
-        RtsSingle.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "");
+        TransferXRegisterToStackPointerSingle.prototype.execute = function (cpu) {
+            cpu.rSP = cpu.rX;
         };
+        return TransferXRegisterToStackPointerSingle;
+    })(BaseOpCode);
+    Emulator.TransferXRegisterToStackPointerSingle = TransferXRegisterToStackPointerSingle;
+    registeredOperations.push(TransferXRegisterToStackPointerSingle);
 
-        RtsSingle.prototype.execute = function (cpu) {
-            cpu.stackRts();
+    var TransferStackPointerToXRegisterSingle = (function (_super) {
+        __extends(TransferStackPointerToXRegisterSingle, _super);
+        function TransferStackPointerToXRegisterSingle() {
+            _super.call(this, "TSX", 0x01, OpCodes.ModeSingle, 0xBA);
+        }
+        TransferStackPointerToXRegisterSingle.prototype.execute = function (cpu) {
+            cpu.rX = cpu.rSP;
         };
-        return RtsSingle;
-    })();
-    Emulator.RtsSingle = RtsSingle;
-
-    registeredOperations.push(RtsSingle);
+        return TransferStackPointerToXRegisterSingle;
+    })(BaseOpCode);
+    Emulator.TransferStackPointerToXRegisterSingle = TransferStackPointerToXRegisterSingle;
+    registeredOperations.push(TransferStackPointerToXRegisterSingle);
 
     var StoreAccumulatorAbsolute = (function () {
         function StoreAccumulatorAbsolute() {
@@ -1257,46 +1723,115 @@ var Emulator;
 
     registeredOperations.push(StoreYRegisterAbsolute);
 
-    var SubtractWithCarryImmediate = (function () {
+    var SubtractWithCarryImmediate = (function (_super) {
+        __extends(SubtractWithCarryImmediate, _super);
         function SubtractWithCarryImmediate() {
-            this.opName = "SBC";
-            this.sizeBytes = 0x02;
-            this.addressingMode = OpCodes.ModeImmediate;
-            this.opCode = 0xe9;
+            _super.call(this, "SBC", 0x02, OpCodes.ModeImmediate, 0xE9);
         }
-        SubtractWithCarryImmediate.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "#$" + OpCodes.ToByte(bytes[1]));
-        };
-
         SubtractWithCarryImmediate.prototype.execute = function (cpu) {
             OpCodes.SubtractWithCarry(cpu, cpu.addrPop());
         };
         return SubtractWithCarryImmediate;
-    })();
+    })(BaseOpCode);
     Emulator.SubtractWithCarryImmediate = SubtractWithCarryImmediate;
-
     registeredOperations.push(SubtractWithCarryImmediate);
 
-    var SubtractWithCarryAbsolute = (function () {
-        function SubtractWithCarryAbsolute() {
-            this.opName = "SBC";
-            this.sizeBytes = 0x03;
-            this.addressingMode = OpCodes.ModeAbsolute;
-            this.opCode = 0xed;
+    var SubtractWithCarryZeroPage = (function (_super) {
+        __extends(SubtractWithCarryZeroPage, _super);
+        function SubtractWithCarryZeroPage() {
+            _super.call(this, "SBC", 0x02, OpCodes.ModeZeroPage, 0xE5);
         }
-        SubtractWithCarryAbsolute.prototype.decompile = function (address, bytes) {
-            return OpCodes.ToDecompiledLine(OpCodes.ToWord(address), this.opName, "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+        SubtractWithCarryZeroPage.prototype.execute = function (cpu) {
+            var zeroPage = cpu.addrPop();
+            OpCodes.SubtractWithCarry(cpu, cpu.peek(zeroPage));
         };
+        return SubtractWithCarryZeroPage;
+    })(BaseOpCode);
+    Emulator.SubtractWithCarryZeroPage = SubtractWithCarryZeroPage;
+    registeredOperations.push(SubtractWithCarryZeroPage);
 
+    var SubtractWithCarryZeroPageX = (function (_super) {
+        __extends(SubtractWithCarryZeroPageX, _super);
+        function SubtractWithCarryZeroPageX() {
+            _super.call(this, "SBC", 0x02, OpCodes.ModeZeroPageX, 0xF5);
+        }
+        SubtractWithCarryZeroPageX.prototype.execute = function (cpu) {
+            OpCodes.SubtractWithCarry(cpu, cpu.peek(cpu.addrZeroPageX()));
+        };
+        return SubtractWithCarryZeroPageX;
+    })(BaseOpCode);
+    Emulator.SubtractWithCarryZeroPageX = SubtractWithCarryZeroPageX;
+    registeredOperations.push(SubtractWithCarryZeroPageX);
+
+    var SubtractWithCarryAbsolute = (function (_super) {
+        __extends(SubtractWithCarryAbsolute, _super);
+        function SubtractWithCarryAbsolute() {
+            _super.call(this, "SBC", 0x03, OpCodes.ModeAbsolute, 0xED);
+        }
         SubtractWithCarryAbsolute.prototype.execute = function (cpu) {
             var targetValue = cpu.peek(cpu.addrPopWord());
             OpCodes.SubtractWithCarry(cpu, targetValue);
         };
         return SubtractWithCarryAbsolute;
-    })();
+    })(BaseOpCode);
     Emulator.SubtractWithCarryAbsolute = SubtractWithCarryAbsolute;
-
     registeredOperations.push(SubtractWithCarryAbsolute);
+
+    var SubtractWithCarryAbsoluteX = (function (_super) {
+        __extends(SubtractWithCarryAbsoluteX, _super);
+        function SubtractWithCarryAbsoluteX() {
+            _super.call(this, "SBC", 0x03, OpCodes.ModeAbsoluteX, 0xFD);
+        }
+        SubtractWithCarryAbsoluteX.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrAbsoluteX());
+            OpCodes.SubtractWithCarry(cpu, targetValue);
+        };
+        return SubtractWithCarryAbsoluteX;
+    })(BaseOpCode);
+    Emulator.SubtractWithCarryAbsoluteX = SubtractWithCarryAbsoluteX;
+    registeredOperations.push(SubtractWithCarryAbsoluteX);
+
+    var SubtractWithCarryAbsoluteY = (function (_super) {
+        __extends(SubtractWithCarryAbsoluteY, _super);
+        function SubtractWithCarryAbsoluteY() {
+            _super.call(this, "SBC", 0x03, OpCodes.ModeAbsoluteY, 0xF9);
+        }
+        SubtractWithCarryAbsoluteY.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrAbsoluteY());
+            OpCodes.SubtractWithCarry(cpu, targetValue);
+        };
+        return SubtractWithCarryAbsoluteY;
+    })(BaseOpCode);
+    Emulator.SubtractWithCarryAbsoluteY = SubtractWithCarryAbsoluteY;
+    registeredOperations.push(SubtractWithCarryAbsoluteY);
+
+    var SubtractWithCarryIndexedIndirectX = (function (_super) {
+        __extends(SubtractWithCarryIndexedIndirectX, _super);
+        function SubtractWithCarryIndexedIndirectX() {
+            _super.call(this, "SBC", 0x02, OpCodes.ModeIndexedIndirectX, 0xE1);
+        }
+        SubtractWithCarryIndexedIndirectX.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrIndexedIndirectX());
+            OpCodes.SubtractWithCarry(cpu, targetValue);
+        };
+        return SubtractWithCarryIndexedIndirectX;
+    })(BaseOpCode);
+    Emulator.SubtractWithCarryIndexedIndirectX = SubtractWithCarryIndexedIndirectX;
+    registeredOperations.push(SubtractWithCarryIndexedIndirectX);
+
+    var SubtractWithCarryIndirectIndexedY = (function (_super) {
+        __extends(SubtractWithCarryIndirectIndexedY, _super);
+        function SubtractWithCarryIndirectIndexedY() {
+            _super.call(this, "SBC", 0x02, OpCodes.ModeIndexedIndirectY, 0xF1);
+        }
+        SubtractWithCarryIndirectIndexedY.prototype.execute = function (cpu) {
+            var targetValue = cpu.peek(cpu.addrIndirectIndexedY());
+            OpCodes.SubtractWithCarry(cpu, targetValue);
+        };
+        return SubtractWithCarryIndirectIndexedY;
+    })(BaseOpCode);
+    Emulator.SubtractWithCarryIndirectIndexedY = SubtractWithCarryIndirectIndexedY;
+    registeredOperations.push(SubtractWithCarryIndirectIndexedY);
 
     var TransferAccumulatorToXSingle = (function () {
         function TransferAccumulatorToXSingle() {

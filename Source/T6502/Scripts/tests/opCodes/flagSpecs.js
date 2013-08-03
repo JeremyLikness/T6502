@@ -16,12 +16,6 @@ var Tests;
         var operation;
         var registers;
 
-        function toHexAddress(address) {
-            var padding = "0000";
-            var result = padding + address.toString(16);
-            return result.substring(result.length - 4, result.length).toUpperCase();
-        }
-
         beforeEach(function () {
             module('app');
         });
@@ -53,6 +47,116 @@ var Tests;
             describe("given decimal flag set", function () {
                 beforeEach(function () {
                     cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, true);
+                    operation.execute(cpu);
+                });
+
+                it("then should set registers back to original", function () {
+                    expect(cpu.rP).toBe(registers);
+                });
+            });
+        });
+
+        describe("SED - Set Decimal Flag", function () {
+            beforeEach(function () {
+                operation = new Emulator.SetDecimalSingle();
+            });
+
+            describe("given decimal flag not set", function () {
+                beforeEach(function () {
+                    operation.execute(cpu);
+                });
+
+                it("then should set decimal flag", function () {
+                    expect(cpu.checkFlag(Constants.ProcessorStatus.DecimalFlagSet)).toBe(true);
+                });
+            });
+
+            describe("given decimal flag set", function () {
+                beforeEach(function () {
+                    cpu.setFlag(Constants.ProcessorStatus.DecimalFlagSet, true);
+                    registers = cpu.rP;
+                    operation.execute(cpu);
+                });
+
+                it("then should not affect registers", function () {
+                    expect(cpu.rP).toBe(registers);
+                });
+            });
+        });
+
+        describe("CLC - Clear Carry Flag", function () {
+            beforeEach(function () {
+                operation = new Emulator.ClearCarrySingle();
+            });
+
+            describe("given carry flag not set", function () {
+                beforeEach(function () {
+                    operation.execute(cpu);
+                });
+
+                it("then should not affect registers", function () {
+                    expect(cpu.rP).toBe(registers);
+                });
+            });
+
+            describe("given carry flag set", function () {
+                beforeEach(function () {
+                    cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, true);
+                    operation.execute(cpu);
+                });
+
+                it("then should set registers back to original", function () {
+                    expect(cpu.rP).toBe(registers);
+                });
+            });
+        });
+
+        describe("SEC - Set Carry Flag", function () {
+            beforeEach(function () {
+                operation = new Emulator.SetCarrySingle();
+            });
+
+            describe("given carry flag not set", function () {
+                beforeEach(function () {
+                    operation.execute(cpu);
+                });
+
+                it("then should set carry flag", function () {
+                    expect(cpu.checkFlag(Constants.ProcessorStatus.CarryFlagSet)).toBe(true);
+                });
+            });
+
+            describe("given carry flag set", function () {
+                beforeEach(function () {
+                    cpu.setFlag(Constants.ProcessorStatus.CarryFlagSet, true);
+                    registers = cpu.rP;
+                    operation.execute(cpu);
+                });
+
+                it("then should not affect registers", function () {
+                    expect(cpu.rP).toBe(registers);
+                });
+            });
+        });
+
+        describe("CLC - Clear Overflow Flag", function () {
+            beforeEach(function () {
+                operation = new Emulator.ClearOverflowSingle();
+            });
+
+            describe("given overflow flag not set", function () {
+                beforeEach(function () {
+                    operation.execute(cpu);
+                });
+
+                it("then should not affect registers", function () {
+                    expect(cpu.rP).toBe(registers);
+                });
+            });
+
+            describe("given overflow flag set", function () {
+                beforeEach(function () {
+                    cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, true);
                     operation.execute(cpu);
                 });
 
