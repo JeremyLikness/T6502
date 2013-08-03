@@ -116,11 +116,25 @@
     </Content>
     <TypeScriptCompile Include="Scripts\tests\opCodes\flagSpecs.ts" />
     <TypeScriptCompile Include="Scripts\tests\opCodes\branchSpecs.ts" />
+    <TypeScriptCompile Include="Scripts\tests\opCodes\bitwiseSpecs.ts" />
+    <Content Include="Scripts\tests\opCodes\bitwiseSpecs.js">
+      <DependentUpon>bitwiseSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\bitwiseSpecs.min.js">
+      <DependentUpon>bitwiseSpecs.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\tests\opCodes\branchSpecs.js">
       <DependentUpon>branchSpecs.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\tests\opCodes\branchSpecs.min.js">
       <DependentUpon>branchSpecs.ts</DependentUpon>
+    </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\comparisonSpecs.ts" />
+    <Content Include="Scripts\tests\opCodes\comparisonSpecs.js">
+      <DependentUpon>comparisonSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\comparisonSpecs.min.js">
+      <DependentUpon>comparisonSpecs.ts</DependentUpon>
     </Content>
     <Content Include="Scripts\tests\opCodes\flagSpecs.js">
       <DependentUpon>flagSpecs.ts</DependentUpon>
@@ -160,6 +174,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Source\sierpinski.txt" />
+    <Content Include="Source\testcomparisons.txt" />
     <Content Include="Source\testdecimal.txt" />
     <Content Include="Source\testoverflow.txt" />
     <Content Include="tests.htm" />
@@ -209,6 +224,12 @@
     </Content>
     <Content Include="Scripts\tests\opCodes\sbcSpec.js.map">
       <DependentUpon>sbcSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\bitwiseSpecs.js.map">
+      <DependentUpon>bitwiseSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\comparisonSpecs.js.map">
+      <DependentUpon>comparisonSpecs.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

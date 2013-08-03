@@ -1,7 +1,3 @@
-///<reference path="../app.ts"/>
-///<reference path="../emulator/cpu.ts"/>
-///<reference path="../services/consoleService.ts"/>
-///<reference path="../services/cpuService.ts"/>
 var Main;
 (function (Main) {
     var MainController = (function () {
@@ -14,7 +10,7 @@ var Main;
             $scope.pc = Constants.Memory.DefaultStart.toString(16).toUpperCase();
             $scope.compilerInfo = "";
 
-            $scope.source = ["palette scroll", "sierpinski", "testdecimal", "testoverflow"];
+            $scope.source = ["palette scroll", "sierpinski", "testcomparisons", "testdecimal", "testoverflow"];
             $scope.selectedSource = $scope.source[0];
 
             $scope.loadSource = function () {
@@ -55,4 +51,3 @@ var Main;
 
     Main.App.Controllers.controller("MainCtrl", MainController);
 })(Main || (Main = {}));
-//@ sourceMappingURL=mainController.js.map
