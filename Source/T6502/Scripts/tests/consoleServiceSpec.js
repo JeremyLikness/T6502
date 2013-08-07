@@ -41,4 +41,4 @@ var Tests;
         });
     });
 })(Tests || (Tests = {}));
-//@ sourceMappingURL=consoleServiceSpec.js.map
+//# sourceMappingURL=consoleServiceSpec.js.map

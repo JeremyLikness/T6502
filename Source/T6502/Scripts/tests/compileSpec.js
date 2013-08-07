@@ -1,4 +1,13 @@
-﻿var Tests;
+﻿/// <reference path='jasmine.d.ts'/>
+/// <reference path='../app/defs/angular.d.ts'/>
+/// <reference path='angular-mocks.d.ts'/>
+/// <reference path='../app/defs/jquery.d.ts'/>
+/// <reference path='../app/app.ts'/>
+/// <reference path='../app/services/cpuService.ts'/>
+/// <reference path='../app/services/consoleService.ts'/>
+/// <reference path='../app/emulator/compiler.ts'/>
+/// <reference path='../app/emulator/opCodes.ts'/>
+var Tests;
 (function (Tests) {
     describe("compiler", function () {
         var cpuSvc;
@@ -30,6 +39,7 @@
                 var jmpAbsolute = new Emulator.JmpAbsolute();
                 var address = cpu.rPC;
 
+                // $0200: JMP $0200
                 cpu.poke(cpu.rPC, jmpAbsolute.opCode);
                 cpu.poke(cpu.rPC + 1, address & Constants.Memory.ByteMask);
                 cpu.poke(cpu.rPC + 2, address >> Constants.Memory.BitsInByte);
@@ -692,6 +702,22 @@
                 expect(result).toBe(true);
                 expect(cpu.peek(cpu.rPC + 3)).toBe(5);
                 expect(cpu.peek(cpu.rPC + 5)).toBe(cpu.rPC >> Constants.Memory.BitsInByte);
+            });
+        });
+
+        describe("given compiler when DCB command encountered", function () {
+            var result;
+
+            beforeEach(function () {
+                result = compiler.compile("Label: DCB 12, 13, $10, $11\n");
+            });
+
+            it("then should compile the bytes directly to memory", function () {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(12);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(13);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0x10);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(0x11);
             });
         });
     });

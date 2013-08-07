@@ -24,4 +24,4 @@ var Directives;
 
     Main.App.Directives.directive("hexadecimal", [Hexadecimal.Factory]);
 })(Directives || (Directives = {}));
-//@ sourceMappingURL=hexadecimal.js.map
+//# sourceMappingURL=hexadecimal.js.map

@@ -277,6 +277,21 @@ module Emulator {
     }
 
     /* =========== 
+       === CompilerOnly === 
+       =========== */
+
+    export class Dcb extends BaseOpCode {
+        constructor() {
+            super("DCB", 0x00, OpCodes.ModeSingle, 0xFFFF);
+        }
+        public execute(cpu: Emulator.ICpu) {
+            throw "DCB is a compiler directive only.";
+        }
+    }    
+    registeredOperations.push(Dcb);
+    
+
+    /* =========== 
        === ADC === 
        =========== */
 
@@ -728,19 +743,10 @@ module Emulator {
     }    
     registeredOperations.push(CompareYAbsolute);    
     
-    export class DecXSingle implements IOperation {
-        
-        public opName: string = "DEX";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
+    export class DecXSingle extends BaseOpCode {
+        constructor() {
+            super("DEX", 0x01, OpCodes.ModeSingle, 0xCA);
         }
-        
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0xCA;
         public execute(cpu: Emulator.ICpu) {
             cpu.rX -= 1;
             if (cpu.rX < 0) {
@@ -749,22 +755,12 @@ module Emulator {
             cpu.setFlags(cpu.rX);
         }
     }
-
     registeredOperations.push(DecXSingle);
 
-    export class DecYSingle implements IOperation {
-        
-        public opName: string = "DEY";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
+    export class DecYSingle extends BaseOpCode {
+        constructor() {
+            super("DEY", 0x01, OpCodes.ModeSingle, 0x88);
         }
-        
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0x88;
         public execute(cpu: Emulator.ICpu) {
             cpu.rY -= 1;
             if (cpu.rY < 0) {
@@ -773,7 +769,6 @@ module Emulator {
             cpu.setFlags(cpu.rY);
         }
     }
-
     registeredOperations.push(DecYSingle);
 
     /* =========== 
@@ -939,19 +934,10 @@ module Emulator {
                  " encountered at $" + prev.toString(16).toUpperCase();
         }
     }
-    export class IncAbsolute implements IOperation {
-        
-        public opName: string = "INC";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+    export class IncAbsolute extends BaseOpCode {
+        constructor() {
+            super("INC", 0x03, OpCodes.ModeAbsolute, 0xEE);
         }
-        
-        public addressingMode: number = OpCodes.ModeAbsolute;
-        public opCode: number = 0xee;
         public execute(cpu: Emulator.ICpu) {
             var target: number = cpu.addrPopWord();
             var value: number = cpu.peek(target);
@@ -960,22 +946,12 @@ module Emulator {
             cpu.setFlags(value);
         }
     }
-
     registeredOperations.push(IncAbsolute);
 
-    export class IncAbsoluteX implements IOperation {
-        
-        public opName: string = "INC";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
+    export class IncAbsoluteX extends BaseOpCode {
+        constructor() {
+            super("INC", 0x03, OpCodes.ModeAbsoluteX, 0xFE);
         }
-        
-        public addressingMode: number = OpCodes.ModeAbsoluteX;
-        public opCode: number = 0xfe;
         public execute(cpu: Emulator.ICpu) {
             var target: number = cpu.addrAbsoluteX();
             var value: number = cpu.peek(target);
@@ -984,64 +960,34 @@ module Emulator {
             cpu.setFlags(value);
         }
     }
-
     registeredOperations.push(IncAbsoluteX);
 
-    export class IncXSingle implements IOperation {
-        
-        public opName: string = "INX";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
+    export class IncXSingle extends BaseOpCode {
+        constructor() {
+            super("IDX", 0x01, OpCodes.ModeSingle, 0xE8);
         }
-        
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0xe8;
         public execute(cpu: Emulator.ICpu) {
             cpu.rX = ((cpu.rX) + 1) & Constants.Memory.ByteMask;
             cpu.setFlags(cpu.rX);
         }
     }
-
     registeredOperations.push(IncXSingle);
 
-    export class IncYSingle implements IOperation {
-        
-        public opName: string = "INY";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
+    export class IncYSingle extends BaseOpCode {
+        constructor() {
+            super("INY", 0x01, OpCodes.ModeSingle, 0xC8);
         }
-        
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0xC8;
         public execute(cpu: Emulator.ICpu) {
             cpu.rY = ((cpu.rY) + 1) & Constants.Memory.ByteMask;
             cpu.setFlags(cpu.rY);
         }
     }
-
     registeredOperations.push(IncYSingle);
 
-    export class IncZeroPage implements IOperation {
-        
-        public opName: string = "INC";
-        public sizeBytes: number = 0x02; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToByte(bytes[1]));
+    export class IncZeroPage extends BaseOpCode {
+        constructor() {
+            super("INC", 0x02, OpCodes.ModeZeroPage, 0xE6);
         }
-
-        public addressingMode: number = OpCodes.ModeZeroPage;
-        public opCode: number = 0xe6;
         public execute(cpu: Emulator.ICpu) {
             var zeroPage: number = cpu.addrPop();
             var value: number = cpu.peek(zeroPage);
@@ -1050,84 +996,44 @@ module Emulator {
             cpu.setFlags(value);
         }
     }
-
     registeredOperations.push(IncZeroPage);
 
-    export class IncrementX implements IOperation {
-        
-        public opName: string = "INX";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
+    export class IncrementX extends BaseOpCode {
+        constructor() {
+            super("INX", 0x01, OpCodes.ModeSingle, 0xE8);
         }
-
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0xe8;
         public execute(cpu: Emulator.ICpu) {
             cpu.rX = (cpu.rX + 1) & Constants.Memory.ByteMask;
             cpu.setFlags(cpu.rX);
         }
     }
-
     registeredOperations.push(IncrementX);
 
-    export class JmpIndirect implements IOperation {
-        
-        public opName:string = "JMP";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "($" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ")");
+    export class JmpIndirect extends BaseOpCode {
+        constructor() {
+            super("JMP", 0x03, OpCodes.ModeIndirect, 0x6C);
         }
-        
-        public addressingMode: number = OpCodes.ModeIndirect;
-        public opCode: number = 0x6c;
         public execute(cpu: Emulator.ICpu) {
             cpu.rPC = cpu.addrIndirect();
         }
     }
-
     registeredOperations.push(JmpIndirect);
 
-    export class JmpAbsolute implements IOperation {
-        
-        public opName:string = "JMP";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+    export class JmpAbsolute extends BaseOpCode {
+        constructor() {
+            super("JMP", 0x03, OpCodes.ModeAbsolute, 0x4C);
         }
-        
-        public addressingMode: number = OpCodes.ModeAbsolute;
-        public opCode: number = 0x4c;
         public execute(cpu: Emulator.ICpu) {
             var newAddress: number = cpu.addrPopWord();
             cpu.rPC = newAddress;
         }
     }
-
     registeredOperations.push(JmpAbsolute);
 
-    export class JmpSubroutineAbsolute implements IOperation {
-        
-        public opName:string = "JSR";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+    export class JmpSubroutineAbsolute extends BaseOpCode {
+        constructor() {
+            super("JSR", 0x03, OpCodes.ModeAbsolute, 0x20);
         }
-        
-        public addressingMode: number = OpCodes.ModeAbsolute;
-        public opCode: number = 0x20;
         public execute(cpu: Emulator.ICpu) {
             var newAddress: number = cpu.addrPopWord();
             cpu.stackPush(((cpu.rPC - 1) >> Constants.Memory.BitsInByte) & Constants.Memory.ByteMask);
@@ -1135,137 +1041,98 @@ module Emulator {
             cpu.rPC = newAddress;
         }
     }
-
     registeredOperations.push(JmpSubroutineAbsolute);
 
-    export class LoadAccumulatorImmediate implements IOperation {
-        
-        public opName: string = "LDA";
-        public sizeBytes: number = 0x02; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "#$" + OpCodes.ToByte(bytes[1]));
+    export class LoadAccumulatorImmediate extends BaseOpCode {
+        constructor() {
+            super("LDA", 0x02, OpCodes.ModeImmediate, 0xA9);
         }
-        
-        public addressingMode: number = OpCodes.ModeImmediate;
-        public opCode: number = 0xa9;
         public execute(cpu: Emulator.ICpu) {
             cpu.rA = cpu.addrPop();
             cpu.setFlags(cpu.rA);
         }
     }
-
     registeredOperations.push(LoadAccumulatorImmediate);
 
-    export class LoadAccumulatorAbsolute implements IOperation {
-        
-        public opName: string = "LDA";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+    export class LoadAccumulatorAbsolute extends BaseOpCode {
+        constructor() {
+            super("LDA", 0x03, OpCodes.ModeAbsolute, 0xAD);
         }
-        
-        public addressingMode: number = OpCodes.ModeAbsolute;
-        public opCode: number = 0xad;
         public execute(cpu: Emulator.ICpu) {
             var memory: number = cpu.addrPopWord();
             cpu.rA = cpu.peek(memory);
             cpu.setFlags(cpu.rA);
         }
     }
-
     registeredOperations.push(LoadAccumulatorAbsolute);
 
-    export class LoadAccumulatorAbsoluteX implements IOperation {
-        
-        public opName: string = "LDA";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
+    export class LoadAccumulatorAbsoluteX extends BaseOpCode {
+        constructor() {
+            super("LDA", 0x03, OpCodes.ModeAbsoluteX, 0xBD);
         }
-        
-        public addressingMode: number = OpCodes.ModeAbsoluteX;
-        public opCode: number = 0xbd;
         public execute(cpu: Emulator.ICpu) {
             cpu.rA = cpu.peek(cpu.addrAbsoluteX());
             cpu.setFlags(cpu.rA);
         }
     }
-
     registeredOperations.push(LoadAccumulatorAbsoluteX);
 
-    export class LoadAccumulatorZeroPage implements IOperation {
-        
-        public opName: string = "LDA";
-        public sizeBytes: number = 0x02; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToByte(bytes[1]));
+    export class LoadAccumulatorZeroPage extends BaseOpCode {
+        constructor() {
+            super("LDA", 0x02, OpCodes.ModeZeroPage, 0xA5);
         }
-        
-        public addressingMode: number = OpCodes.ModeZeroPage;
-        public opCode: number = 0xa5;
         public execute(cpu: Emulator.ICpu) {
             cpu.rA = cpu.peek(cpu.addrPop());
             cpu.setFlags(cpu.rA);
         }
     }
-
     registeredOperations.push(LoadAccumulatorZeroPage);
 
-    export class LoadYRegisterAbsolute implements IOperation {
-        
-        public opName: string = "LDY";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
+    export class LoadAccumulatorIndexedIndirectY extends BaseOpCode {
+        constructor() {
+            super("LDA", 0x02, OpCodes.ModeIndexedIndirectY, 0xB1);
         }
-                
-        public addressingMode: number = OpCodes.ModeAbsolute; 
-        public opCode: number = 0xac; 
+        public execute(cpu: Emulator.ICpu) {
+            cpu.rA = cpu.peek(cpu.addrIndirectIndexedY());
+            cpu.setFlags(cpu.rA);
+        }
+    }
+    registeredOperations.push(LoadAccumulatorIndexedIndirectY);
+
+    export class LoadYRegisterAbsolute extends BaseOpCode {
+        constructor() {
+            super("LDY", 0x03, OpCodes.ModeAbsolute, 0xAC);
+        }
         public execute(cpu: Emulator.ICpu) {
             var target: number = cpu.addrPopWord();
             cpu.rY = cpu.peek(target);
             cpu.setFlags(cpu.rY);
         }
     }
-
     registeredOperations.push(LoadYRegisterAbsolute);
 
-    export class LoadYRegisterImmediate implements IOperation {
-        
-        public opName: string = "LDY";
-        public sizeBytes: number = 0x02; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "#$" + OpCodes.ToByte(bytes[1]));
+    export class LoadYRegisterImmediate extends BaseOpCode {
+        constructor() {
+            super("LDY", 0x02, OpCodes.ModeImmediate, 0xA0);
         }
-        
-        
-        public addressingMode: number = OpCodes.ModeImmediate; 
-        public opCode: number = 0xa0; 
         public execute(cpu: Emulator.ICpu) {
             cpu.rY = cpu.addrPop();
             cpu.setFlags(cpu.rY);
         }
     }
-
     registeredOperations.push(LoadYRegisterImmediate);
+
+    export class LoadYRegisterZeroPage extends BaseOpCode {
+        constructor() {
+            super("LDY", 0x02, OpCodes.ModeZeroPage, 0xA4);
+        }
+        public execute(cpu: Emulator.ICpu) {
+            var zeroPage: number = cpu.addrPop();
+            cpu.rY = cpu.peek(zeroPage);
+            cpu.setFlags(cpu.rY);
+        }
+    }
+    registeredOperations.push(LoadYRegisterZeroPage);
 
     export class LoadXRegisterImmediate implements IOperation {
 
@@ -1500,127 +1367,77 @@ module Emulator {
        === STA ===
        =========== */
 
-    export class StoreAccumulatorAbsolute implements IOperation {
-
-        public opName: string = "STA";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
-        }        
-
-        public addressingMode: number = OpCodes.ModeAbsolute;
-        public opCode: number = 0x8d; 
+    export class StoreAccumulatorAbsolute extends BaseOpCode {
+        constructor() {
+            super("STA", 0x03, OpCodes.ModeAbsolute, 0x8D);
+        }
         public execute(cpu: Emulator.ICpu) {
             var targetAddress: number = cpu.addrPopWord();
             cpu.poke(targetAddress, cpu.rA);
         }
     }
-
     registeredOperations.push(StoreAccumulatorAbsolute);
 
-    export class StoreAccumulatorAbsoluteX implements IOperation {
-
-        public opName: string = "STA";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", X");
-        }        
-
-        public addressingMode: number = OpCodes.ModeAbsoluteX;
-        public opCode: number = 0x9d; 
+    export class StoreAccumulatorAbsoluteX extends BaseOpCode {
+        constructor() {
+            super("STA", 0x03, OpCodes.ModeAbsoluteX, 0x9D);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.poke(cpu.addrAbsoluteX(), cpu.rA);
         }
     }
-
     registeredOperations.push(StoreAccumulatorAbsoluteX);
 
-    export class StoreAccumulatorAbsoluteY implements IOperation {
-
-        public opName: string = "STA";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)) + ", Y");
-        }        
-
-        public addressingMode: number = OpCodes.ModeAbsoluteY;
-        public opCode: number = 0x99; 
+    export class StoreAccumulatorAbsoluteY extends BaseOpCode {
+        constructor() {
+            super("STA", 0x03, OpCodes.ModeAbsoluteY, 0x99);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.poke(cpu.addrAbsoluteY(), cpu.rA);
         }
     }
-
     registeredOperations.push(StoreAccumulatorAbsoluteY);
 
-    export class StoreAccumulatorIndirectY implements IOperation {
-
-        public opName: string = "STA";
-        public sizeBytes: number = 0x02; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "($" + OpCodes.ToByte(bytes[1]) + "), Y");
-        }        
-
-        public addressingMode: number = OpCodes.ModeIndexedIndirectY;
-        public opCode: number = 0x91; 
+    export class StoreAccumulatorIndirectY extends BaseOpCode {
+        constructor() {
+            super("STA", 0x02, OpCodes.ModeIndexedIndirectY, 0x91);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.poke(cpu.addrIndirectIndexedY(), cpu.rA);
         }
     }
-
     registeredOperations.push(StoreAccumulatorIndirectY);
     
-    export class StoreAccumulatorZeroPage implements IOperation {
-
-        public opName: string = "STA";
-        public sizeBytes: number = 0x02; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToByte(bytes[1]));
-        }        
-
-        public addressingMode: number = OpCodes.ModeZeroPage;
-        public opCode: number = 0x85; 
+    export class StoreAccumulatorIndirectX extends BaseOpCode {
+        constructor() {
+            super("STA", 0x02, OpCodes.ModeIndexedIndirectX, 0xA1);
+        }
+        public execute(cpu: Emulator.ICpu) {
+            cpu.poke(cpu.addrIndexedIndirectX(), cpu.rA);
+        }
+    }
+    registeredOperations.push(StoreAccumulatorIndirectX);
+    
+    export class StoreAccumulatorZeroPage extends BaseOpCode {
+        constructor() {
+            super("STA", 0x02, OpCodes.ModeZeroPage, 0x85);
+        }
         public execute(cpu: Emulator.ICpu) {
             var zeroPage: number = cpu.addrPop();
             cpu.poke(zeroPage, cpu.rA);
         }
     }
-
     registeredOperations.push(StoreAccumulatorZeroPage);
 
-    export class StoreYRegisterAbsolute implements IOperation {
-
-        public opName: string = "STY";
-        public sizeBytes: number = 0x03; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "$" + OpCodes.ToWord(bytes[1] + (bytes[2] << Constants.Memory.BitsInByte)));
-        }        
-
-        public addressingMode: number = OpCodes.ModeAbsolute;
-        public opCode: number = 0x8c; 
+    export class StoreYRegisterAbsolute extends BaseOpCode {
+        constructor() {
+            super("STY", 0x03, OpCodes.ModeAbsolute, 0x8C);
+        }
         public execute(cpu: Emulator.ICpu) {
             var targetAddress: number = cpu.addrPopWord();
             cpu.poke(targetAddress, cpu.rY);
         }
     }
-
     registeredOperations.push(StoreYRegisterAbsolute);
 
     /* ===========
@@ -1713,87 +1530,47 @@ module Emulator {
     }    
     registeredOperations.push(SubtractWithCarryIndirectIndexedY);   
 
-    export class TransferAccumulatorToXSingle implements IOperation {
-
-        public opName: string = "TAX";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
-        }        
-
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0xAA; 
+    export class TransferAccumulatorToXSingle extends BaseOpCode {
+        constructor() {
+            super("TAX", 0x01, OpCodes.ModeSingle, 0xAA);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.rX = cpu.rA;
             cpu.setFlags(cpu.rX);
         }
     }
-
     registeredOperations.push(TransferAccumulatorToXSingle);
 
-    export class TransferAccumulatorToYSingle implements IOperation {
-
-        public opName: string = "TAY";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
-        }        
-
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0xA8; 
+    export class TransferAccumulatorToYSingle extends BaseOpCode {
+        constructor() {
+            super("TAY", 0x01, OpCodes.ModeSingle, 0xA8);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.rY = cpu.rA;
             cpu.setFlags(cpu.rY);
         }
     }
-
     registeredOperations.push(TransferAccumulatorToYSingle);
 
-    export class TransferXToAccumulatorSingle implements IOperation {
-
-        public opName: string = "TXA";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
-        }        
-
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0x8A; 
+    export class TransferXToAccumulatorSingle extends BaseOpCode {
+        constructor() {
+            super("TXA", 0x01, OpCodes.ModeSingle, 0x8A);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.rA = cpu.rX;
             cpu.setFlags(cpu.rA);
         }
     }
-
     registeredOperations.push(TransferXToAccumulatorSingle);
 
-    export class TransferYToAccumulatorSingle implements IOperation {
-
-        public opName: string = "TYA";
-        public sizeBytes: number = 0x01; 
-        public decompile (address: number, bytes: number[]): string {
-            return OpCodes.ToDecompiledLine(
-                OpCodes.ToWord(address),
-                this.opName,
-                "");
-        }        
-
-        public addressingMode: number = OpCodes.ModeSingle;
-        public opCode: number = 0x98; 
+    export class TransferYToAccumulatorSingle extends BaseOpCode {
+        constructor() {
+            super("TYA", 0x01, OpCodes.ModeSingle, 0x98);
+        }
         public execute(cpu: Emulator.ICpu) {
             cpu.rA = cpu.rY;
             cpu.setFlags(cpu.rA);
         }
     }
-
     registeredOperations.push(TransferYToAccumulatorSingle);
 }

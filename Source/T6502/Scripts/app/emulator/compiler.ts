@@ -5,7 +5,7 @@ module Emulator {
 
     // instance of the compiler/decompiler
     export interface ICompiler {
-        compile(source: string): bool;
+        compile(source: string): boolean;
         decompile(startAddress: number): string;
         dump(startAddress: number): string;
     }
@@ -97,6 +97,11 @@ module Emulator {
                 ];
 
                 var operation = this.cpu.getOperation(opCode);
+
+                if (!operation) {
+                    operation = new InvalidOp(opCode);    
+                }
+
                 lines.push(operation.decompile(address, parms));
 
                 instructions += 1;
@@ -408,7 +413,9 @@ module Emulator {
             var idx: number;
             var hex: boolean;
             var rawValue: string;
+            var values: string[];
             var value: number;
+            var entry: string;
             var xIndex: string;
             var yIndex: string;
             var opCodeName: string = matches[1];
@@ -437,6 +444,36 @@ module Emulator {
             processed = true;
 
             parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
+
+            if (opCodeName === "DCB") {
+                // dcb simply loads bytes 
+                compiledLine.processed = true;
+                compiledLine.operation = operations[0];
+                var values = parameter.split(","); 
+                if (values.length === 0) {
+                    throw "DCB requires a list of bytes to be inserted into the compilation stream.";
+                }
+                for(idx = 0; idx < values.length; idx++) {
+                    if (values[idx] === undefined || values[idx] === null || values[idx].length === 0) {
+                        throw "DCB with invalid value list: " + parameter; 
+                    }    
+                    entry = values[idx];
+                    hex = entry.indexOf("$") >= 0;
+                    if (hex) {
+                        entry = entry.replace("$", ""); 
+                        value = parseInt(entry, 16);
+                    }
+                    else {
+                        value = parseInt(entry, 10);
+                    }
+                    if (value < 0 || value > Constants.Memory.ByteMask) {
+                        throw "DCB with value out of range: " + parameter;
+                    }
+                    compiledLine.code.push(value);
+                }
+                compiledLine.operation.sizeBytes = compiledLine.code.length; 
+                return compiledLine;
+            }
 
             hex = parameter.indexOf("$") >= 0;
 
@@ -796,7 +833,7 @@ module Emulator {
             return compilerResult;
         }
 
-        private labelExists(label: string, labels: ILabel[]): bool {
+        private labelExists(label: string, labels: ILabel[]): boolean {
             return this.findLabel(label, labels) !== null;
         }
         

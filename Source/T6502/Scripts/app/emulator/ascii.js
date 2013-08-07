@@ -19,4 +19,4 @@ var Emulator;
     })();
     Emulator.Ascii = Ascii;
 })(Emulator || (Emulator = {}));
-//@ sourceMappingURL=ascii.js.map
+//# sourceMappingURL=ascii.js.map

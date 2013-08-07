@@ -779,5 +779,23 @@ module Tests {
             });
         });
 
+        describe("given compiler when DCB command encountered", () => { 
+            
+            var result: boolean; 
+
+            beforeEach(() => {
+                result = compiler.compile(
+                    "Label: DCB 12, 13, $10, $11\n");
+            });
+
+            it("then should compile the bytes directly to memory", () => {
+                expect(result).toBe(true);
+                expect(cpu.peek(cpu.rPC)).toBe(12);
+                expect(cpu.peek(cpu.rPC + 1)).toBe(13);
+                expect(cpu.peek(cpu.rPC + 2)).toBe(0x10);
+                expect(cpu.peek(cpu.rPC + 3)).toBe(0x11);
+            });
+        });
+
     });
 }
