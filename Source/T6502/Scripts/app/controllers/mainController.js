@@ -1,3 +1,7 @@
+///<reference path="../app.ts"/>
+///<reference path="../emulator/cpu.ts"/>
+///<reference path="../services/consoleService.ts"/>
+///<reference path="../services/cpuService.ts"/>
 var Main;
 (function (Main) {
     var MainController = (function () {
@@ -14,7 +18,8 @@ var Main;
             $scope.selectedSource = $scope.source[0];
 
             $scope.loadSource = function () {
-                $http.get("Source/" + $scope.selectedSource.replace(" ", "_") + ".txt").then(function (result) {
+                var url = "Source/" + $scope.selectedSource.replace(" ", "_") + ".txt";
+                $http.get(url).then(function (result) {
                     _this.$scope.compilerInfo = result.data;
                 });
             };
@@ -51,3 +56,4 @@ var Main;
 
     Main.App.Controllers.controller("MainCtrl", MainController);
 })(Main || (Main = {}));
+//# sourceMappingURL=mainController.js.map

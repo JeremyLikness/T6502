@@ -1,3 +1,6 @@
+///<reference path="../app.ts"/>
+///<reference path="../emulator/cpu.ts"/>
+///<reference path="../emulator/compiler.ts"/>
 var Services;
 (function (Services) {
     var CpuService = (function () {
@@ -19,3 +22,4 @@ var Services;
 
     Main.App.Services.service("cpuService", ['$timeout', 'consoleService', 'displayService', CpuService]);
 })(Services || (Services = {}));
+//# sourceMappingURL=cpuService.js.map

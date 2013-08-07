@@ -1,3 +1,5 @@
+///<reference path='cpu.ts'/>
+///<reference path='opCodes.ts'/>
 var Emulator;
 (function (Emulator) {
     var Compiler = (function () {
@@ -50,6 +52,11 @@ var Emulator;
                 ];
 
                 var operation = this.cpu.getOperation(opCode);
+
+                if (!operation) {
+                    operation = new Emulator.InvalidOp(opCode);
+                }
+
                 lines.push(operation.decompile(address, parms));
 
                 instructions += 1;
@@ -82,8 +89,13 @@ var Emulator;
             this.consoleService.log("Starting compilation.");
 
             try  {
+                // first pass actually compiles and picks up labels, then flags
+                // compiled lines that must be updated because they reference labels
+                // that are defined later
                 var compiled = this.parseLabels(lines);
 
+                // this pass simply goes through and updates the labels or throws
+                // an exception if a label is not found
                 compiled = this.compileSource(compiled);
 
                 this.consoleService.log("Compilation complete.");
@@ -108,6 +120,8 @@ var Emulator;
             return true;
         };
 
+        // parses out labels but compiles as it goes because it needs to know the size
+        // of the current line to keep track of labels
         Compiler.prototype.parseLabels = function (lines) {
             var address = Constants.Memory.DefaultStart;
             var label;
@@ -140,6 +154,7 @@ var Emulator;
                     continue;
                 }
 
+                // check if the user is setting the address
                 var testAddress = this.moveAddress(input);
 
                 if (!(isNaN(testAddress))) {
@@ -186,8 +201,10 @@ var Emulator;
                     var hex = !!input.match(this.memoryLabelHex);
                     label = hex ? this.memoryLabelHex.exec(input)[1] : this.memoryLabelDec.exec(input)[1];
 
+                    // strip the label out
                     input = input.replace(label + ":", "");
 
+                    // strip hex out if applicable
                     label = label.replace("$", "");
                     address = parseInt(label, hex ? 16 : 10);
 
@@ -268,6 +285,7 @@ var Emulator;
                 return "";
             }
 
+            // trim the line
             input = input.replace(this.whitespaceTrim, "").replace(this.whitespaceTrimEnd, "");
 
             return input;
@@ -311,7 +329,9 @@ var Emulator;
             var idx;
             var hex;
             var rawValue;
+            var values;
             var value;
+            var entry;
             var xIndex;
             var yIndex;
             var opCodeName = matches[1];
@@ -339,6 +359,35 @@ var Emulator;
 
             parameter = this.trimLine(opCodeExpression.replace(opCodeName, ""));
 
+            if (opCodeName === "DCB") {
+                // dcb simply loads bytes
+                compiledLine.processed = true;
+                compiledLine.operation = operations[0];
+                var values = parameter.split(",");
+                if (values.length === 0) {
+                    throw "DCB requires a list of bytes to be inserted into the compilation stream.";
+                }
+                for (idx = 0; idx < values.length; idx++) {
+                    if (values[idx] === undefined || values[idx] === null || values[idx].length === 0) {
+                        throw "DCB with invalid value list: " + parameter;
+                    }
+                    entry = values[idx];
+                    hex = entry.indexOf("$") >= 0;
+                    if (hex) {
+                        entry = entry.replace("$", "");
+                        value = parseInt(entry, 16);
+                    } else {
+                        value = parseInt(entry, 10);
+                    }
+                    if (value < 0 || value > Constants.Memory.ByteMask) {
+                        throw "DCB with value out of range: " + parameter;
+                    }
+                    compiledLine.code.push(value);
+                }
+                compiledLine.operation.sizeBytes = compiledLine.code.length;
+                return compiledLine;
+            }
+
             hex = parameter.indexOf("$") >= 0;
 
             if (hex) {
@@ -349,6 +398,7 @@ var Emulator;
             if (operations[0].addressingMode === Emulator.OpCodes.ModeRelative) {
                 test = hex ? this.absoluteHex : this.absolute;
 
+                // absolute with label
                 compiledLine.processed = true;
                 parameter = this.parseAbsoluteLabel(parameter, compiledLine, labels, test, this.absoluteLabel);
                 processed = compiledLine.processed;
@@ -395,6 +445,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // indexed indirect X
             test = hex ? this.indirectXHex : this.indirectX;
             if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
@@ -404,6 +455,7 @@ var Emulator;
                     throw "Indirect X-Indexed value of out range: " + value;
                 }
 
+                // strip the index and parenthesis
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = parameter.replace(xIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
@@ -422,6 +474,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // indirect indexed Y
             test = hex ? this.indirectYHex : this.indirectY;
             if (matchArray = parameter.match(test)) {
                 rawValue = matchArray[1];
@@ -431,6 +484,7 @@ var Emulator;
                     throw "Indexed Indirect-Y value of out range: " + value;
                 }
 
+                // strip the index and parenthesis
                 parameter = parameter.replace("(", "").replace(")", "");
                 parameter = parameter.replace(yIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
@@ -449,6 +503,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // immediate with label
             test = hex ? this.immediateHex : this.immediate;
             if (!parameter.match(test)) {
                 if (matchArray = parameter.match(this.immediateLabel)) {
@@ -473,6 +528,7 @@ var Emulator;
                     throw "Immediate value of out range: " + value;
                 }
 
+                // strip the value to find what's remaining
                 parameter = parameter.replace("#", "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
@@ -490,6 +546,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // absolute with X-index mode
             test = hex ? this.absoluteXHex : this.absoluteX;
 
             compiledLine.processed = true;
@@ -504,6 +561,7 @@ var Emulator;
                     throw "Absolute X-Indexed value of out range: " + value;
                 }
 
+                // strip the index
                 parameter = parameter.replace(xIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
@@ -522,6 +580,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // absolute with Y-index label
             test = hex ? this.absoluteYHex : this.absoluteY;
 
             compiledLine.processed = true;
@@ -536,6 +595,7 @@ var Emulator;
                     throw "Absolute Y-Indexed value of out range: " + value;
                 }
 
+                // strip the index
                 parameter = parameter.replace(yIndex, "");
                 parameter = this.trimLine(parameter.replace(rawValue, ""));
                 if (parameter.match(this.notWhitespace)) {
@@ -554,6 +614,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // indirect with label
             test = hex ? this.indirectHex : this.indirect;
 
             compiledLine.processed = true;
@@ -585,6 +646,7 @@ var Emulator;
                 return compiledLine;
             }
 
+            // absolute with label
             test = hex ? this.absoluteHex : this.absolute;
 
             compiledLine.processed = true;
@@ -701,3 +763,4 @@ var Emulator;
     })();
     Emulator.Compiler = Compiler;
 })(Emulator || (Emulator = {}));
+//# sourceMappingURL=compiler.js.map

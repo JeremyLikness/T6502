@@ -19,4 +19,4 @@ var Filters;
 
     Main.App.Filters.filter("hexadecimal", [HexadecimalFilter.Factory]);
 })(Filters || (Filters = {}));
-//@ sourceMappingURL=hexadecimal.js.map
+//# sourceMappingURL=hexadecimal.js.map

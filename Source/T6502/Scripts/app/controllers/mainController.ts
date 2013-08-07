@@ -41,7 +41,8 @@ module Main {
             $scope.selectedSource = $scope.source[0];
 
             $scope.loadSource = () => {
-                $http.get("Source/" + $scope.selectedSource.replace(" ", "_") + ".txt").then(result => {
+                var url: string = "Source/" + $scope.selectedSource.replace(" ", "_") + ".txt"; 
+                $http.get(url).then((result: ng.IHttpPromiseCallbackArg<string>) => {
                     this.$scope.compilerInfo = result.data;
                 });
             };

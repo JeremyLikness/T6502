@@ -30,9 +30,9 @@ module Emulator {
         elapsedMilliseconds: number;
         instructionsPerSecond: number;
 
-        autoRefresh: bool;
-        runningState: bool; 
-        errorState: bool;
+        autoRefresh: boolean;
+        runningState: boolean; 
+        errorState: boolean;
         log(msg: string): void;
         reset(): void;
         halt(): void;
@@ -42,7 +42,7 @@ module Emulator {
         
         addrPop(): number;
         addrPopWord(): number; 
-        stackPush(value: number): bool;
+        stackPush(value: number): boolean;
         stackPop(): number;
         stackRts(): void;
         poke(address: number, value: number): void;
@@ -73,9 +73,9 @@ module Emulator {
         public elapsedMilliseconds: number;
         public instructionsPerSecond: number;
 
-        public autoRefresh: bool;
-        public runningState: bool;
-        public errorState: bool;
+        public autoRefresh: boolean;
+        public runningState: boolean;
+        public errorState: boolean;
 
         public log: (msg: string) => void;
 
@@ -256,7 +256,7 @@ module Emulator {
         }
 
         // push a value to the stack or throw an exception when full
-        public stackPush(value: number): bool {
+        public stackPush(value: number): boolean {
         
             if (this.rSP >= 0x0) {
                 this.rSP -= 1;

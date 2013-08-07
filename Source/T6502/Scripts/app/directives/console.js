@@ -26,4 +26,4 @@ var Directives;
 
     Main.App.Directives.directive("console", ["consoleService", Console.Factory]);
 })(Directives || (Directives = {}));
-//@ sourceMappingURL=console.js.map
+//# sourceMappingURL=console.js.map
