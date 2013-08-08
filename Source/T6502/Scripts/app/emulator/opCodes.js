@@ -235,9 +235,9 @@ var Emulator;
     })();
     Emulator.BaseOpCode = BaseOpCode;
 
-    /* ===========
-    === CompilerOnly ===
-    =========== */
+    /* =====================
+    === Compiler Only ===
+    ===================== */
     var Dcb = (function (_super) {
         __extends(Dcb, _super);
         function Dcb() {
@@ -1081,6 +1081,10 @@ var Emulator;
         return InvalidOp;
     })(BaseOpCode);
     Emulator.InvalidOp = InvalidOp;
+
+    /* =================
+    === INC (X,Y) ===
+    ================= */
     var IncAbsolute = (function (_super) {
         __extends(IncAbsolute, _super);
         function IncAbsolute() {
@@ -1115,19 +1119,39 @@ var Emulator;
     Emulator.IncAbsoluteX = IncAbsoluteX;
     registeredOperations.push(IncAbsoluteX);
 
-    var IncXSingle = (function (_super) {
-        __extends(IncXSingle, _super);
-        function IncXSingle() {
-            _super.call(this, "IDX", 0x01, OpCodes.ModeSingle, 0xE8);
+    var IncZeroPage = (function (_super) {
+        __extends(IncZeroPage, _super);
+        function IncZeroPage() {
+            _super.call(this, "INC", 0x02, OpCodes.ModeZeroPage, 0xE6);
         }
-        IncXSingle.prototype.execute = function (cpu) {
-            cpu.rX = ((cpu.rX) + 1) & Constants.Memory.ByteMask;
-            cpu.setFlags(cpu.rX);
+        IncZeroPage.prototype.execute = function (cpu) {
+            var target = cpu.addrPop();
+            var value = cpu.peek(target);
+            value = (value + 1) & Constants.Memory.ByteMask;
+            cpu.poke(target, value);
+            cpu.setFlags(value);
         };
-        return IncXSingle;
+        return IncZeroPage;
     })(BaseOpCode);
-    Emulator.IncXSingle = IncXSingle;
-    registeredOperations.push(IncXSingle);
+    Emulator.IncZeroPage = IncZeroPage;
+    registeredOperations.push(IncZeroPage);
+
+    var IncZeroPageX = (function (_super) {
+        __extends(IncZeroPageX, _super);
+        function IncZeroPageX() {
+            _super.call(this, "INC", 0x02, OpCodes.ModeZeroPageX, 0xF6);
+        }
+        IncZeroPageX.prototype.execute = function (cpu) {
+            var target = cpu.addrZeroPageX();
+            var value = cpu.peek(target);
+            value = (value + 1) & Constants.Memory.ByteMask;
+            cpu.poke(target, value);
+            cpu.setFlags(value);
+        };
+        return IncZeroPageX;
+    })(BaseOpCode);
+    Emulator.IncZeroPageX = IncZeroPageX;
+    registeredOperations.push(IncZeroPage);
 
     var IncYSingle = (function (_super) {
         __extends(IncYSingle, _super);
@@ -1143,37 +1167,23 @@ var Emulator;
     Emulator.IncYSingle = IncYSingle;
     registeredOperations.push(IncYSingle);
 
-    var IncZeroPage = (function (_super) {
-        __extends(IncZeroPage, _super);
-        function IncZeroPage() {
-            _super.call(this, "INC", 0x02, OpCodes.ModeZeroPage, 0xE6);
-        }
-        IncZeroPage.prototype.execute = function (cpu) {
-            var zeroPage = cpu.addrPop();
-            var value = cpu.peek(zeroPage);
-            value = (value + 1) & Constants.Memory.ByteMask;
-            cpu.poke(zeroPage, value);
-            cpu.setFlags(value);
-        };
-        return IncZeroPage;
-    })(BaseOpCode);
-    Emulator.IncZeroPage = IncZeroPage;
-    registeredOperations.push(IncZeroPage);
-
-    var IncrementX = (function (_super) {
-        __extends(IncrementX, _super);
-        function IncrementX() {
+    var IncrementXSingle = (function (_super) {
+        __extends(IncrementXSingle, _super);
+        function IncrementXSingle() {
             _super.call(this, "INX", 0x01, OpCodes.ModeSingle, 0xE8);
         }
-        IncrementX.prototype.execute = function (cpu) {
+        IncrementXSingle.prototype.execute = function (cpu) {
             cpu.rX = (cpu.rX + 1) & Constants.Memory.ByteMask;
             cpu.setFlags(cpu.rX);
         };
-        return IncrementX;
+        return IncrementXSingle;
     })(BaseOpCode);
-    Emulator.IncrementX = IncrementX;
-    registeredOperations.push(IncrementX);
+    Emulator.IncrementXSingle = IncrementXSingle;
+    registeredOperations.push(IncrementXSingle);
 
+    /* ===========
+    === JMP ===
+    =========== */
     var JmpIndirect = (function (_super) {
         __extends(JmpIndirect, _super);
         function JmpIndirect() {

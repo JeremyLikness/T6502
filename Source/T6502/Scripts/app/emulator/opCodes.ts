@@ -276,9 +276,9 @@ module Emulator {
         }
     }
 
-    /* =========== 
-       === CompilerOnly === 
-       =========== */
+    /* ===================== 
+       === Compiler Only === 
+       ===================== */
 
     export class Dcb extends BaseOpCode {
         constructor() {
@@ -966,6 +966,11 @@ module Emulator {
                  " encountered at $" + prev.toString(16).toUpperCase();
         }
     }
+
+    /* =================
+       === INC (X,Y) ===
+       ================= */
+
     export class IncAbsolute extends BaseOpCode {
         constructor() {
             super("INC", 0x03, OpCodes.ModeAbsolute, 0xEE);
@@ -994,16 +999,33 @@ module Emulator {
     }
     registeredOperations.push(IncAbsoluteX);
 
-    export class IncXSingle extends BaseOpCode {
+    export class IncZeroPage extends BaseOpCode {
         constructor() {
-            super("IDX", 0x01, OpCodes.ModeSingle, 0xE8);
+            super("INC", 0x02, OpCodes.ModeZeroPage, 0xE6);
         }
         public execute(cpu: Emulator.ICpu) {
-            cpu.rX = ((cpu.rX) + 1) & Constants.Memory.ByteMask;
-            cpu.setFlags(cpu.rX);
+            var target: number = cpu.addrPop();
+            var value: number = cpu.peek(target);
+            value = (value + 1) & Constants.Memory.ByteMask;
+            cpu.poke(target, value);
+            cpu.setFlags(value);
         }
     }
-    registeredOperations.push(IncXSingle);
+    registeredOperations.push(IncZeroPage);
+
+    export class IncZeroPageX extends BaseOpCode {
+        constructor() {
+            super("INC", 0x02, OpCodes.ModeZeroPageX, 0xF6);
+        }
+        public execute(cpu: Emulator.ICpu) {
+            var target: number = cpu.addrZeroPageX();
+            var value: number = cpu.peek(target);
+            value = (value + 1) & Constants.Memory.ByteMask;
+            cpu.poke(target, value);
+            cpu.setFlags(value);
+        }
+    }
+    registeredOperations.push(IncZeroPage);
 
     export class IncYSingle extends BaseOpCode {
         constructor() {
@@ -1016,21 +1038,7 @@ module Emulator {
     }
     registeredOperations.push(IncYSingle);
 
-    export class IncZeroPage extends BaseOpCode {
-        constructor() {
-            super("INC", 0x02, OpCodes.ModeZeroPage, 0xE6);
-        }
-        public execute(cpu: Emulator.ICpu) {
-            var zeroPage: number = cpu.addrPop();
-            var value: number = cpu.peek(zeroPage);
-            value = (value + 1) & Constants.Memory.ByteMask;
-            cpu.poke(zeroPage, value);
-            cpu.setFlags(value);
-        }
-    }
-    registeredOperations.push(IncZeroPage);
-
-    export class IncrementX extends BaseOpCode {
+    export class IncrementXSingle extends BaseOpCode {
         constructor() {
             super("INX", 0x01, OpCodes.ModeSingle, 0xE8);
         }
@@ -1039,7 +1047,11 @@ module Emulator {
             cpu.setFlags(cpu.rX);
         }
     }
-    registeredOperations.push(IncrementX);
+    registeredOperations.push(IncrementXSingle);
+
+    /* ===========
+       === JMP ===
+       =========== */
 
     export class JmpIndirect extends BaseOpCode {
         constructor() {
