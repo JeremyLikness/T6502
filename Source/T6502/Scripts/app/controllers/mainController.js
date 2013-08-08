@@ -56,4 +56,3 @@ var Main;
 
     Main.App.Controllers.controller("MainCtrl", MainController);
 })(Main || (Main = {}));
-//# sourceMappingURL=mainController.js.map

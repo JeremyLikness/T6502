@@ -143,6 +143,13 @@
     <Content Include="Scripts\tests\opCodes\comparisonSpecs.min.js">
       <DependentUpon>comparisonSpecs.ts</DependentUpon>
     </Content>
+    <TypeScriptCompile Include="Scripts\tests\opCodes\decSpecs.ts" />
+    <Content Include="Scripts\tests\opCodes\decSpecs.js">
+      <DependentUpon>decSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\decSpecs.min.js">
+      <DependentUpon>decSpecs.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\tests\opCodes\flagSpecs.js">
       <DependentUpon>flagSpecs.ts</DependentUpon>
     </Content>
@@ -150,6 +157,13 @@
       <DependentUpon>flagSpecs.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="Scripts\tests\opCodes\jsrSpec.ts" />
+    <TypeScriptCompile Include="Scripts\tests\opCodes\incSpecs.ts" />
+    <Content Include="Scripts\tests\opCodes\incSpecs.js">
+      <DependentUpon>incSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\incSpecs.min.js">
+      <DependentUpon>incSpecs.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\tests\opCodes\jsrSpec.js">
       <DependentUpon>jsrSpec.ts</DependentUpon>
     </Content>
@@ -240,6 +254,12 @@
     </Content>
     <Content Include="Scripts\tests\opCodes\bitSpec.js.map">
       <DependentUpon>bitSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\incSpecs.js.map">
+      <DependentUpon>incSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\decSpecs.js.map">
+      <DependentUpon>decSpecs.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
