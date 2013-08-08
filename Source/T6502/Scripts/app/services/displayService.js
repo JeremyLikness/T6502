@@ -21,4 +21,3 @@ var Services;
 
     Main.App.Services.service("displayService", DisplayService);
 })(Services || (Services = {}));
-//# sourceMappingURL=displayService.js.map

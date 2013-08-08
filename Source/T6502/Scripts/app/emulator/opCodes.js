@@ -479,6 +479,43 @@ var Emulator;
     Emulator.AndIndirectY = AndIndirectY;
     registeredOperations.push(AndIndirectY);
 
+    /* ===========
+    === BIT ===
+    =========== */
+    var BitAbsolute = (function (_super) {
+        __extends(BitAbsolute, _super);
+        function BitAbsolute() {
+            _super.call(this, "BIT", 0x03, OpCodes.ModeAbsolute, 0x2C);
+        }
+        BitAbsolute.prototype.execute = function (cpu) {
+            var address = cpu.addrPopWord();
+            var value = cpu.peek(address);
+            cpu.setFlag(Constants.ProcessorStatus.ZeroFlagSet, (cpu.rA & value) === 0);
+            cpu.setFlag(Constants.ProcessorStatus.NegativeFlagSet, !!(value & Constants.ProcessorStatus.NegativeFlagSet));
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, !!(value & Constants.ProcessorStatus.OverflowFlagSet));
+        };
+        return BitAbsolute;
+    })(BaseOpCode);
+    Emulator.BitAbsolute = BitAbsolute;
+    registeredOperations.push(BitAbsolute);
+
+    var BitZeroPage = (function (_super) {
+        __extends(BitZeroPage, _super);
+        function BitZeroPage() {
+            _super.call(this, "BIT", 0x02, OpCodes.ModeAbsolute, 0x24);
+        }
+        BitZeroPage.prototype.execute = function (cpu) {
+            var zeroPage = cpu.addrPop();
+            var value = cpu.peek(zeroPage);
+            cpu.setFlag(Constants.ProcessorStatus.ZeroFlagSet, (cpu.rA & value) === 0);
+            cpu.setFlag(Constants.ProcessorStatus.NegativeFlagSet, (value & Constants.ProcessorStatus.NegativeFlagSet) > 0);
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, (value & Constants.ProcessorStatus.OverflowFlagSet) > 0);
+        };
+        return BitZeroPage;
+    })(BaseOpCode);
+    Emulator.BitZeroPage = BitZeroPage;
+    registeredOperations.push(BitZeroPage);
+
     /* ================
     === BRANCHES ===
     ================ */
@@ -1833,4 +1870,3 @@ var Emulator;
     Emulator.TransferYToAccumulatorSingle = TransferYToAccumulatorSingle;
     registeredOperations.push(TransferYToAccumulatorSingle);
 })(Emulator || (Emulator = {}));
-//# sourceMappingURL=opCodes.js.map
