@@ -117,6 +117,13 @@
     <TypeScriptCompile Include="Scripts\tests\opCodes\flagSpecs.ts" />
     <TypeScriptCompile Include="Scripts\tests\opCodes\branchSpecs.ts" />
     <TypeScriptCompile Include="Scripts\tests\opCodes\bitwiseSpecs.ts" />
+    <TypeScriptCompile Include="Scripts\tests\opCodes\bitSpec.ts" />
+    <Content Include="Scripts\tests\opCodes\bitSpec.js">
+      <DependentUpon>bitSpec.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\bitSpec.min.js">
+      <DependentUpon>bitSpec.ts</DependentUpon>
+    </Content>
     <Content Include="Scripts\tests\opCodes\bitwiseSpecs.js">
       <DependentUpon>bitwiseSpecs.ts</DependentUpon>
     </Content>
@@ -230,6 +237,9 @@
     </Content>
     <Content Include="Scripts\tests\opCodes\comparisonSpecs.js.map">
       <DependentUpon>comparisonSpecs.ts</DependentUpon>
+    </Content>
+    <Content Include="Scripts\tests\opCodes\bitSpec.js.map">
+      <DependentUpon>bitSpec.ts</DependentUpon>
     </Content>
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>

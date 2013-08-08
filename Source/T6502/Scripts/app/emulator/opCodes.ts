@@ -473,6 +473,38 @@ module Emulator {
     }    
     registeredOperations.push(AndIndirectY);
 
+    /* ===========
+       === BIT ===
+       =========== */
+    export class BitAbsolute extends BaseOpCode {
+        constructor() {
+            super("BIT", 0x03, OpCodes.ModeAbsolute, 0x2C);
+        }
+        public execute(cpu: Emulator.ICpu) {
+            var address: number = cpu.addrPopWord();
+            var value: number = cpu.peek(address); 
+            cpu.setFlag(Constants.ProcessorStatus.ZeroFlagSet, (cpu.rA & value) === 0);
+            cpu.setFlag(Constants.ProcessorStatus.NegativeFlagSet, !!(value & Constants.ProcessorStatus.NegativeFlagSet));
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, !!(value & Constants.ProcessorStatus.OverflowFlagSet));
+        }
+    }
+    registeredOperations.push(BitAbsolute);
+
+    export class BitZeroPage extends BaseOpCode {
+        constructor() {
+            super("BIT", 0x02, OpCodes.ModeAbsolute, 0x24);
+        }
+        public execute(cpu: Emulator.ICpu) {
+            var zeroPage: number = cpu.addrPop();
+            var value: number = cpu.peek(zeroPage); 
+            cpu.setFlag(Constants.ProcessorStatus.ZeroFlagSet, (cpu.rA & value) === 0);
+            cpu.setFlag(Constants.ProcessorStatus.NegativeFlagSet, (value & Constants.ProcessorStatus.NegativeFlagSet) > 0);
+            cpu.setFlag(Constants.ProcessorStatus.OverflowFlagSet, (value & Constants.ProcessorStatus.OverflowFlagSet) > 0);
+        }
+    }
+    registeredOperations.push(BitZeroPage);
+
+
     /* ================ 
        === BRANCHES === 
        ================ */

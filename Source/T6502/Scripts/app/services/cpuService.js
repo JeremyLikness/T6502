@@ -22,4 +22,3 @@ var Services;
 
     Main.App.Services.service("cpuService", ['$timeout', 'consoleService', 'displayService', CpuService]);
 })(Services || (Services = {}));
-//# sourceMappingURL=cpuService.js.map

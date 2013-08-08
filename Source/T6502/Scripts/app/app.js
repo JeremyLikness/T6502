@@ -28,4 +28,3 @@ var Main;
     })();
     Main.App = App;
 })(Main || (Main = {}));
-//# sourceMappingURL=app.js.map

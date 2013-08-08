@@ -19,4 +19,3 @@ var Services;
 
     Main.App.Services.service("consoleService", ConsoleService);
 })(Services || (Services = {}));
-//# sourceMappingURL=consoleService.js.map
