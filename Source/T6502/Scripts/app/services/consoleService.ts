@@ -21,10 +21,8 @@ module Services {
 
             if (this.lines.length > Constants.Display.ConsoleLines) {
                 this.lines.splice(0, 1);
-            }
-            
+            }            
         }
-
     }
 
     Main.App.Services.service("consoleService", ConsoleService);

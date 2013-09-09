@@ -10,11 +10,11 @@ var Directives;
                 restrict: "E",
                 template: "<div class='console'><span ng-repeat='line in lines'>{{line}}<br/></span></div>",
                 scope: {},
-                link: function (scope, element, attrs) {
-                    var element = angular.element(element);
+                link: function (scope, element) {
+                    var e = angular.element(element);
                     scope.lines = consoleService.lines;
-                    scope.$watch("lines", function (newValue) {
-                        var div = $(element).get(0).childNodes[0];
+                    scope.$watch("lines", function () {
+                        var div = $(e).get(0).childNodes[0];
                         $(div).scrollTop(div.scrollHeight);
                     }, true);
                 }

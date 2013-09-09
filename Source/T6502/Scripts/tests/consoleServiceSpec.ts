@@ -4,6 +4,7 @@
 /// <reference path='../app/defs/jquery.d.ts'/>
 /// <reference path='../app/app.ts'/>
 /// <reference path='../app/services/consoleService.ts'/>
+///<reference path="../globalConstants.ts"/>
 
 module Tests {
 
@@ -21,14 +22,14 @@ module Tests {
             });
         });
 
-        describe("given console service when called", () => {
-            it("then should initialize the lines array", () => {        
+        describe("given an instance of the console service when it is first called", () => {
+            it("then should initialize the lines array to an empty list", () => {        
                 expect(consoleSvc.lines).toBeDefined();
                 expect(consoleSvc.lines.length).toBe(0);
             });
         });
 
-        describe("given console service when log method called", () => {          
+        describe("given an instance of the console service when the log method is called", () => {          
 
             var message: string = "This is a test message.";
 
@@ -41,6 +42,24 @@ module Tests {
                 expect(consoleSvc.lines.length).toBe(1);
                 expect(consoleSvc.lines[0]).toBe(message);
             });                                  
+        });
+
+        describe("given an instance of the console service when the log method is called more than " + Constants.Display.ConsoleLines + " times", () => {
+            
+            var expected: string = (01).toString(16);
+
+            beforeEach(() => {
+                var x: number;
+                for (x = 0; x <= Constants.Display.ConsoleLines; x++) {
+                    consoleSvc.log(x.toString(16));
+                }
+            });
+
+            it("then should truncate the the list to " + Constants.Display.ConsoleLines + " lines", () => {
+                expect(consoleSvc.lines.length).toBe(Constants.Display.ConsoleLines);
+                expect(consoleSvc.lines[0]).toBe(expected);
+            });
+        
         });
     });
 }

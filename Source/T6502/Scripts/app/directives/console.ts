@@ -10,19 +10,19 @@ module Directives {
     export class Console {
 
         public static Factory(
-            consoleService: Services.ConsoleService) {
+            consoleService: Services.IConsoleService) {
             return {
                 restrict: "E",
                 template:
                     "<div class='console'><span ng-repeat='line in lines'>{{line}}<br/></span></div>",
                 scope: {},
-                link: function (scope: IConsoleScope, element, attrs) {
-                    var element = angular.element(element);
+                link: function (scope: IConsoleScope, element) {
+                    var e: JQuery = angular.element(element);
                     scope.lines = consoleService.lines;
-                    scope.$watch("lines", newValue => {
-                            var div = <HTMLDivElement>$(element).get(0).childNodes[0];
-                            $(div).scrollTop(div.scrollHeight);                           
-                        }, true);                    
+                    scope.$watch("lines", () => {
+                        var div: HTMLDivElement = <HTMLDivElement>$(e).get(0).childNodes[0];
+                        $(div).scrollTop(div.scrollHeight); 
+                    }, true);                    
                 }
             };
         }

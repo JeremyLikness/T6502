@@ -22,3 +22,4 @@ var Filters;
 
     Main.App.Filters.filter("eightbits", [EightBitsFilter.Factory]);
 })(Filters || (Filters = {}));
+//@ sourceMappingURL=eightbits.js.map
