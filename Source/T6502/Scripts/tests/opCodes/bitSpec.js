@@ -127,3 +127,4 @@ var Tests;
         });
     });
 })(Tests || (Tests = {}));
+//@ sourceMappingURL=bitSpec.js.map

@@ -79,3 +79,4 @@ var Directives;
     })();
     Directives.Palette = Palette;
 })(Directives || (Directives = {}));
+//@ sourceMappingURL=palette.js.map
